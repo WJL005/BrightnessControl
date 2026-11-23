@@ -1,1 +1,16 @@
-IyDkuq7luqbmjqfliLblt6XlhbcgLSDmk43kvZzml6Xlv5fnpLrkvovvvIjlt7LohLHmlY/vvIkNCiMg55yf5a6e6L+Q6KGM5pe25pel5b+X5L2N5LqOIGxvZ3NcYnJpZ2h0bmVzcy1ZWVlZTU1ERC5sb2fvvIzmraTlpITkuLrohLHmlY/moLfkvosNCg0KWVlZWS1NTS1ERCBISDpNTTpTUyB8IFNFVCAgICB8IHJlcT03ODsgYmVmb3JlPTk4OyBhZnRlcj03ODsgcmVzdWx0PU9LIHwgdXNlcj0855So5oi35ZCNPiB8IGhvc3Q9POS4u+acuuWQjT4NCllZWVktTU0tREQgSEg6TU06U1MgfCBTRVQgICAgfCByZXE9ODc7IGJlZm9yZT03ODsgYWZ0ZXI9ODc7IHJlc3VsdD1PSyB8IHVzZXI9POeUqOaIt+WQjT4gfCBob3N0PTzkuLvmnLrlkI0+DQpZWVlZLU1NLUREIEhIOk1NOlNTIHwgRkFJTCAgIHwgcmVxPTgwOyBiZWZvcmU9LTE7IGVycm9yPeaMh+WumueahOi9rOaNouaXoOaViOOAgiB8IHVzZXI9POeUqOaIt+WQjT4gfCBob3N0PTzkuLvmnLrlkI0+DQpZWVlZLU1NLUREIEhIOk1NOlNTIHwgRkFJTCAgIHwgcmVxPTgwOyBiZWZvcmU9LTE7IGVycm9yPeaMh+WumueahOi9rOaNouaXoOaViOOAgiB8IHVzZXI9POeUqOaIt+WQjT4gfCBob3N0PTzkuLvmnLrlkI0+DQpZWVlZLU1NLUREIEhIOk1NOlNTIHwgRkFJTCAgIHwgcmVxPTgwOyBiZWZvcmU9LTE7IGVycm9yPeaMh+WumueahOi9rOaNouaXoOaViOOAgiB8IHVzZXI9POeUqOaIt+WQjT4gfCBob3N0PTzkuLvmnLrlkI0+DQpZWVlZLU1NLUREIEhIOk1NOlNTIHwgRkFJTCAgIHwgcmVxPTgwOyBiZWZvcmU9LTE7IGVycm9yPeaMh+WumueahOi9rOaNouaXoOaViOOAgiB8IHVzZXI9POeUqOaIt+WQjT4gfCBob3N0PTzkuLvmnLrlkI0+DQpZWVlZLU1NLUREIEhIOk1NOlNTIHwgQ0hBTkdFIHwgZnJvbT04NzsgdG89ODAgfCB1c2VyPTznlKjmiLflkI0+IHwgaG9zdD085Li75py65ZCNPg0KWVlZWS1NTS1ERCBISDpNTTpTUyB8IFNFVCAgICB8IHJlcT04MDsgYmVmb3JlPTgwOyBhZnRlcj04MDsgcmVzdWx0PU9LIHwgdXNlcj0855So5oi35ZCNPiB8IGhvc3Q9POS4u+acuuWQjT4NCllZWVktTU0tREQgSEg6TU06U1MgfCBTRVQgICAgfCB0YXJnZXQ95aSW5o6l5pi+56S65Zmo77yIRERD77yJOyByZXE9MDsgYmVmb3JlPTg1OyBhZnRlcj0wOyByZXN1bHQ9T0sgfCB1c2VyPTznlKjmiLflkI0+IHwgaG9zdD085Li75py65ZCNPg0KWVlZWS1NTS1ERCBISDpNTTpTUyB8IENIQU5HRSB8IHRhcmdldD3lhoXnva7pnaLmnb/vvIhXTUnvvIk7IGZyb209ODk7IHRvPTEwMCB8IHVzZXI9POeUqOaIt+WQjT4gfCBob3N0PTzkuLvmnLrlkI0+DQpZWVlZLU1NLUREIEhIOk1NOlNTIHwgUkVQT1JUIHwgZmlsZT1yZXBvcnQtWVlZWU1NREQtSEhNTVNTLnR4dCB8IHVzZXI9POeUqOaIt+WQjT4gfCBob3N0PTzkuLvmnLrlkI0+DQpZWVlZLU1NLUREIEhIOk1NOlNTIHwgRklYICAgIHwgLVRhcmdldCBWYXJpQnJpZ2h0IC1SZXN0b3JlIC1BcHBseSB8IHVzZXI9POeUqOaIt+WQjT4gfCBob3N0PTzkuLvmnLrlkI0+DQpZWVlZLU1NLUREIEhIOk1NOlNTIHwgV0FSTiAgIHwgcmVhZC1iZWZvcmUtZmFpbGVkOiBJbnZhbGlkQ2FzdEV4Y2VwdGlvbjog5oyH5a6a55qE6L2s5o2i5peg5pWI44CCIEDlnKggQnJpZ2h0bmVzc0FwcC5CcmlnaHRuZXNzLkdldCgpIHwgdXNlcj0855So5oi35ZCNPiB8IGhvc3Q9POS4u+acuuWQjT4NCg==
+# 亮度控制工具 - 操作日志示例（已脱敏）
+# 真实运行时日志位于 logs\brightness-YYYYMMDD.log，此处为脱敏样例
+
+YYYY-MM-DD HH:MM:SS | SET    | req=78; before=98; after=78; result=OK | user=<用户名> | host=<主机名>
+YYYY-MM-DD HH:MM:SS | SET    | req=87; before=78; after=87; result=OK | user=<用户名> | host=<主机名>
+YYYY-MM-DD HH:MM:SS | FAIL   | req=80; before=-1; error=指定的转换无效。 | user=<用户名> | host=<主机名>
+YYYY-MM-DD HH:MM:SS | FAIL   | req=80; before=-1; error=指定的转换无效。 | user=<用户名> | host=<主机名>
+YYYY-MM-DD HH:MM:SS | FAIL   | req=80; before=-1; error=指定的转换无效。 | user=<用户名> | host=<主机名>
+YYYY-MM-DD HH:MM:SS | FAIL   | req=80; before=-1; error=指定的转换无效。 | user=<用户名> | host=<主机名>
+YYYY-MM-DD HH:MM:SS | CHANGE | from=87; to=80 | user=<用户名> | host=<主机名>
+YYYY-MM-DD HH:MM:SS | SET    | req=80; before=80; after=80; result=OK | user=<用户名> | host=<主机名>
+YYYY-MM-DD HH:MM:SS | SET    | target=外接显示器（DDC）; req=0; before=85; after=0; result=OK | user=<用户名> | host=<主机名>
+YYYY-MM-DD HH:MM:SS | CHANGE | target=内置面板（WMI）; from=89; to=100 | user=<用户名> | host=<主机名>
+YYYY-MM-DD HH:MM:SS | REPORT | file=report-YYYYMMDD-HHMMSS.txt | user=<用户名> | host=<主机名>
+YYYY-MM-DD HH:MM:SS | FIX    | -Target VariBright -Restore -Apply | user=<用户名> | host=<主机名>
+YYYY-MM-DD HH:MM:SS | WARN   | read-before-failed: InvalidCastException: 指定的转换无效。 @在 BrightnessApp.Brightness.Get() | user=<用户名> | host=<主机名>

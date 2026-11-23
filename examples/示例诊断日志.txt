@@ -1,1 +1,4 @@
-IyDkuq7luqbkvZPmo4Dor4rmlq3ml6Xlv5fnpLrkvovvvIjlt7LohLHmlY/vvIkNCg0KWVlZWS1NTS1ERCBISDpNTTpTUyB8IERJQUcgfCBicmlnaHRuZXNzPTgwIHwgZXM9T24gfCBic0NvZWZmPTEwMCB8IHZhcmlCcmlnaHQ9MiB8IGFkYXB0aXZlPW9mZiB8IGZpbmRpbmdzPTEgfCBBTUQgVmFyaS1CcmlnaHTvvIjlhoXlrrnoh6rpgILlupTog4zlhYnvvInlpITkuo7lkK/nlKjnirbmgIHvvIznrYnnuqcgMuOAgg0KWVlZWS1NTS1ERCBISDpNTTpTUyB8IERJQUcgfCBicmlnaHRuZXNzPTk4IHwgZXM9T24gfCBic0NvZWZmPTEwMCB8IHZhcmlCcmlnaHQ9MiB8IGFkYXB0aXZlPW9mZiB8IGZpbmRpbmdzPTEgfCBBTUQgVmFyaS1CcmlnaHTvvIjlhoXlrrnoh6rpgILlupTog4zlhYnvvInlpITkuo7lkK/nlKjnirbmgIHvvIznrYnnuqcgMuOAgg0K
+# 亮度体检诊断日志示例（已脱敏）
+
+YYYY-MM-DD HH:MM:SS | DIAG | brightness=80 | es=On | bsCoeff=100 | variBright=2 | adaptive=off | findings=1 | AMD Vari-Bright（内容自适应背光）处于启用状态，等级 2。
+YYYY-MM-DD HH:MM:SS | DIAG | brightness=98 | es=On | bsCoeff=100 | variBright=2 | adaptive=off | findings=1 | AMD Vari-Bright（内容自适应背光）处于启用状态，等级 2。

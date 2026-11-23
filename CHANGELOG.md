@@ -1,1 +1,40 @@
-IyBDaGFuZ2Vsb2cKCuacrOmhueebrumBteW+qiBb6K+t5LmJ5YyW54mI5pysXShodHRwczovL3NlbXZlci5vcmcvbGFuZy96aC1DTi8p44CCCgojIyBbMS4xLjVdIC0gMjAyNi0xMS0yMwoK5a+55bqU56iL5bqP5YaF6YOo54mI5pys5Y+3IDEuMTXjgIIKCiMjIyDmlrDlop4KLSDjgIzoioLnlLXmqKHlvI/luLjlvIDjgI3vvJrlj6/orqnoioLnlLXmqKHlvI/lnKjmj5LnlLXml7bkuZ/kv53mjIHnlJ/mlYjvvIzlkIzml7bkuI3lho3ljovmmpflsY/luZXvvJvmiZjnm5joj5zljZXkuZ/lj6/kuIDplK7lvIDlhbPjgIIKLSDnlLXmupDmlrnmoYjjgIzlpI3liLbliLDmj5LnlLUgLyDlpI3liLbliLDnlLXmsaDjgI3vvJrmiorlhbPlsY/jgIHnnaHnnKDjgIHkuq7luqblnKjkuKTnp43kvpvnlLXnirbmgIHpl7TkupLnm7jlkIzmraXjgIIKLSDjgIzlhajpg6jov5jljp/jgI3vvJrmiornlLXmupDorqHliJLjgIHmqKHlvI/jgIHotoXml7bjgIHlpITnkIblmajjgIHoioLnlLXnrZbnlaXkuIDmrKHmgKfov5jljp/liLDmnIDml6nnmoTlpIfku73jgIIKLSDjgIzlpI3liLbnirbmgIHjgI3vvJrmiorlvZPliY3nlLXmupAv5Lqu5bqm54q25oCB5pW055CG5oiQ5paH5a2X5aSN5Yi25Yiw5Ymq6LS05p2/77yM5L6/5LqO57KY6LS05o6S5p+l77yb5pS555SoIFdpbjMyIOebtOWGme+8jOi/nOeoi+ahjOmdoi/oh6rliqjljJbnjq/looPkuIvkuZ/og73nlKjjgIIKLSDmiZjnm5joj5zljZXmlrDlop7jgIznnIHnlLUgLyDlnYfooaEgLyDmgKfog73mqKHlvI/jgI3lv6vmjbflhaXlj6PjgIIKLSDnlLXmupDlpIfku73mianlsZXkuLogYHBvd2VyLWxvY2stYmFja3VwLnR4dGAg5LiOIGBiYXR0ZXJ5LXNhdmVyLWJhY2t1cC50eHRgIOS4pOS7ve+8jOaSpOmUgOaXtuimhuebluabtOWujOaVtOOAggoKIyMjIOaUuei/mwotIOW8gOacuuWQjiAxLjUg56eS6Ieq5Yqo6YeN5paw5qCh5YeG55S15rqQ54q25oCB77yM6YG/5YWN55S15rqQ5pyN5Yqh5bCa5pyq5bCx57uq5pe26K+75pWw5Li656m644CCCi0g55S15rqQ6K6+572u5Yy66ZqP56qX5Y+j5a695bqm6Ieq6YCC5bqU5biD5bGA77yM5Y+z5L6n5oyJ6ZKu5LiN5Lya6KKr5oyk5Y6L5oiW6KOB5o6J44CCCi0g5LiL5ouJ5YiX6KGo5a695bqm5oyJ5o6n5Lu25b2T5YmN5a695bqm57uY5Yi277yM5bGV5byA5ZCO5bem5Y+z5a+56b2Q44CCCi0g56qX5Y+j5qCH6aKY54mI5pys5Y+35pu05paw5Li6IDEuMTXjgIIKCiMjIFsxLjAuMF0gLSAyMDI2LTExLTIzCgrpppbkuKrlhazlvIDlj5HluIPniYjmnKzvvIjohLHmlY/lvIDmupDniYjvvInjgIIKCiMjIyDmlrDlop4KLSBHVUkg54mIIGBCcmlnaHRuZXNzQ29udHJvbC5leGVg77ya5Lqu5bqm5ruR5p2hIC8gwrE1IOW+ruiwgyAvIOWunuaXtuWbnuivu+WkjeaguOOAgeWGhee9ruWxjyhXTUkpIOS4juWkluaOpeWxjyhEREMpIOWPjOWxj+aOp+WItuOAgeS4pOWdl+Wxj+S4gOi1t+iwg+OAgeaJmOebmOmpu+eVmeOAgWBDdHJsK0FsdCvihpEv4oaTYCDlhajlsYDlv6vmjbfplK7jgIHlvIDmnLroh6rlkK/jgIIKLSDnlLXmupDmlrnmoYjnrqHnkIbvvJrnnIHnlLUv5Z2H6KGhL+aAp+iDveaooeW8j+OAgeaPkuaLlOeUtea6kOiHquWKqOiuvuS6ruW6pu+8jOS/ruaUueWJjeiHquWKqOWkh+S7veOAgeWPr+S4gOmUruaSpOmUgOOAggotIOS4gOmUruW8gOWFsyBBTUQgVmFyaS1CcmlnaHTjgIIKLSDns7vnu5/nirbmgIHpnaLmnb/kuI7or4rmlq3miqXlkYrlr7zlh7rjgIHmk43kvZzml6Xlv5fmn6XnnIvjgIIKLSDlkb3ku6TooYzniYggYEJyaWdodG5lc3NUb29sLmV4ZWDvvJpgc2hvd2AgLyBgc2V0IDwwLTEwMD5gIC8gYG1vbml0b3IgW+mXtOmalF1gIOWtkOWRveS7pO+8jOaUr+aMgeaMieWPr+aJp+ihjOaWh+S7tuWQjeiHquWKqOinpuWPke+8iOS6ruW6pi04MC5leGUg562J77yJ44CCCi0gUG93ZXJTaGVsbCDohJrmnKzvvJpgRGlhZ25vc2UtQnJpZ2h0bmVzcy5wczFg77yI5Y+q6K+75L2T5qOA77yJ44CBYEZpeC1CcmlnaHRuZXNzLVNvdXJjZS5wczFg77yI6buY6K6k5ryU57uD55qE5L+u5aSN77yJ44CBYFNldC1CcmlnaHRuZXNzLnBzMWDvvIjlupXlsYLorr7nva7vvInjgIFg5Lqu5bqmLTUwfjEwMC5wczFg77yI5b+r5o236ISa5pys77yJ44CCCi0g6K+m57uG5pON5L2c5pel5b+X5LiO6K+K5pat5pel5b+X77yM5oyJ5aSp5YiG5paH5Lu244CCCi0gYGJ1aWxkLmJhdGAg5LiA6ZSu57yW6K+RIEdVSSDkuI4gQ0xJIOS4pOS4queJiOacrOOAggotIOiEseaVj+WkhOeQhu+8muenu+mZpOacrOacuueUqOaIt+WQjeOAgeacuuWZqOWQjeOAgeaYvuekuuWZqOWei+WPt+S4juengeaciei3r+W+hO+8jOaPkOS+m+iEseaVj+aXpeW/l+ekuuS+i+OAggoKWzEuMS41XTogaHR0cHM6Ly9naXRodWIuY29tL1dKTDAwNS9CcmlnaHRuZXNzQ29udHJvbC9yZWxlYXNlcy90YWcvdjEuMS41ClsxLjEuMF06IGh0dHBzOi8vZ2l0aHViLmNvbS9XSkwwMDUvQnJpZ2h0bmVzc0NvbnRyb2wvcmVsZWFzZXMvdGFnL3YxLjEuMApbMS4wLjBdOiBodHRwczovL2dpdGh1Yi5jb20vV0pMMDA1L0JyaWdodG5lc3NDb250cm9sL3JlbGVhc2VzL3RhZy92MS4wLjAK
+# Changelog
+
+本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
+
+## [1.1.5] - 2026-11-23
+
+对应程序内部版本号 1.15。
+
+### 新增
+- 「节电模式常开」：可让节电模式在插电时也保持生效，同时不再压暗屏幕；托盘菜单也可一键开关。
+- 电源方案「复制到插电 / 复制到电池」：把关屏、睡眠、亮度在两种供电状态间互相同步。
+- 「全部还原」：把电源计划、模式、超时、处理器、节电策略一次性还原到最早的备份。
+- 「复制状态」：把当前电源/亮度状态整理成文字复制到剪贴板，便于粘贴排查；改用 Win32 直写，远程桌面/自动化环境下也能用。
+- 托盘菜单新增「省电 / 均衡 / 性能模式」快捷入口。
+- 电源备份扩展为 `power-lock-backup.txt` 与 `battery-saver-backup.txt` 两份，撤销时覆盖更完整。
+
+### 改进
+- 开机后 1.5 秒自动重新校准电源状态，避免电源服务尚未就绪时读数为空。
+- 电源设置区随窗口宽度自适应布局，右侧按钮不会被挤压或裁掉。
+- 下拉列表宽度按控件当前宽度绘制，展开后左右对齐。
+- 窗口标题版本号更新为 1.15。
+
+## [1.0.0] - 2026-11-23
+
+首个公开发布版本（脱敏开源版）。
+
+### 新增
+- GUI 版 `BrightnessControl.exe`：亮度滑条 / ±5 微调 / 实时回读复核、内置屏(WMI) 与外接屏(DDC) 双屏控制、两块屏一起调、托盘驻留、`Ctrl+Alt+↑/↓` 全局快捷键、开机自启。
+- 电源方案管理：省电/均衡/性能模式、插拔电源自动设亮度，修改前自动备份、可一键撤销。
+- 一键开关 AMD Vari-Bright。
+- 系统状态面板与诊断报告导出、操作日志查看。
+- 命令行版 `BrightnessTool.exe`：`show` / `set <0-100>` / `monitor [间隔]` 子命令，支持按可执行文件名自动触发（亮度-80.exe 等）。
+- PowerShell 脚本：`Diagnose-Brightness.ps1`（只读体检）、`Fix-Brightness-Source.ps1`（默认演练的修复）、`Set-Brightness.ps1`（底层设置）、`亮度-50~100.ps1`（快捷脚本）。
+- 详细操作日志与诊断日志，按天分文件。
+- `build.bat` 一键编译 GUI 与 CLI 两个版本。
+- 脱敏处理：移除本机用户名、机器名、显示器型号与私有路径，提供脱敏日志示例。
+
+[1.1.5]: https://github.com/WJL005/BrightnessControl/releases/tag/v1.1.5
+[1.1.0]: https://github.com/WJL005/BrightnessControl/releases/tag/v1.1.0
+[1.0.0]: https://github.com/WJL005/BrightnessControl/releases/tag/v1.0.0

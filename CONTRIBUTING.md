@@ -1,1 +1,36 @@
-IyDotKHnjK7mjIfljZcKCuaEn+iwouS9oOiAg+iZkeS4uiBCcmlnaHRuZXNzIENvbnRyb2wg5YGa6LSh54yu44CCCgojIyDnjq/looMKCi0gV2luZG93cyAxMCAvIDExCi0gLk5FVCBGcmFtZXdvcmsgNC54IOeahCBDIyDnvJbor5HlmajvvIhgY3NjLmV4ZWDvvIkKLSBQb3dlclNoZWxsIDUuMSvvvIjohJrmnKzkuI7kvZPmo4Dlt6XlhbfvvIkKCiMjIOe8lueggee6puWumgoKLSDmupDnoIHkuLogQyMgNSDor63ms5XvvIjphY3lkIggYC5ORVQgRnJhbWV3b3JrIDQueGAg6Ieq5bim55qEIGBjc2MuZXhlYO+8jOS4jeS9v+eUqOaWsOivreiogOeJueaAp++8ieOAggotIFVJIOaWh+ahiOS9v+eUqOS4reaWh++8m+S7o+eggeazqOmHiueugOaYjuWNs+WPr+OAggotIEdVSSDkuI4gQ0xJIOaYr+S4pOS4queLrOeri+WFpeWPo++8iGBQcm9ncmFtLk1haW5g77yJ77yM5LqS5LiN5byV55So77yb5L+u5pS55pe25L+d5oyB6L+Z5LiA54K544CCCi0g5raJ5Y+K57O757uf6K6+572u77yI5rOo5YaM6KGo44CB55S15rqQ5pa55qGI77yJ55qE5pS55Yqo5b+F6aG777ya6buY6K6k5LiN5YaZ44CB5YaZ5YmN5aSH5Lu944CB5o+Q5L6b5pKk6ZSA44CCCgojIyDmj5DkuqTmtYHnqIsKCjEuIEZvcmsg5LuT5bqT5bm25bu65YiG5pSv44CCCjIuIOS/ruaUueWQjueUqCBgYnVpbGQuYmF0YCDnoa7orqTog73nvJbor5HpgJrov4fjgIIKMy4g6Ieq5rWLIEdVSSDkuI4gQ0xJIOeahOaguOW/g+WKn+iDveOAggo0LiDmj5DkuqQgUFLvvIzor7TmmI7mlLnliqjnm67nmoTkuI7mtYvor5Xmlrnms5XjgIIKCiMjIOmakOengee6oue6v++8iOmHjeimge+8iQoK5pys6aG555uu5rqQ6Ieq5LiA5qyh6ISx5pWP5byA5rqQ77yM6K+35oqK6ZqQ56eB5pS+5Zyo56ys5LiA5L2N77yaCgotIOS4jeimgeaKiuS9oOeahOeUqOaIt+WQjeOAgeacuuWZqOWQjeOAgeaYvuekuuWZqOWei+WPt+OAgeW6j+WIl+WPt+WGmei/m+a6kOeggeOAgeazqOmHiuaIluaWh+aho+OAggotIOS4jeimgeaPkOS6pCBgbG9nc1xg44CBYGJhY2t1cFxg44CBYHBvd2VyLWxvY2stYmFja3VwLnR4dGDjgIFgYmF0dGVyeS1zYXZlci1iYWNrdXAudHh0YOOAgWBwb3dlci1iYWNrdXAudHh0YCDnrYnov5DooYzml7bkuqfnianvvIjlt7LlnKggYC5naXRpZ25vcmVg77yJ44CCCi0g5ZyoIGlzc3VlIC8gUFIg6YeM6LS05pel5b+X5YmN5YWI6ISx5pWP44CCCi0g5paw5aKe56S65L6L5pWw5o2u6K+35L2/55SoIGBleGFtcGxlc1xgIOS4i+eahOWNoOS9jeespumjjuagvO+8iGB1c2VyPTznlKjmiLflkI0+YOOAgWBob3N0PTzkuLvmnLrlkI0+YOOAgWBZWVlZLU1NLUREYO+8ieOAggoKIyMg5oql5ZGK6Zeu6aKYCgrmj5AgaXNzdWUg5pe26K+36ZmE5LiK77yaV2luZG93cyDniYjmnKzjgIHnrJTorrDmnKwv5Y+w5byP5py644CB5YaF572u5bGP6L+Y5piv5aSW5o6l5bGP44CB5piv5ZCm5o+S55S144CB5L2T5qOA6ISa5pys6L6T5Ye677yI6ISx5pWP5ZCO77yJ44CB55u45YWz5pel5b+X54mH5q6177yI6ISx5pWP5ZCO77yJ44CCCg==
+# 贡献指南
+
+感谢你考虑为 Brightness Control 做贡献。
+
+## 环境
+
+- Windows 10 / 11
+- .NET Framework 4.x 的 C# 编译器（`csc.exe`）
+- PowerShell 5.1+（脚本与体检工具）
+
+## 编码约定
+
+- 源码为 C# 5 语法（配合 `.NET Framework 4.x` 自带的 `csc.exe`，不使用新语言特性）。
+- UI 文案使用中文；代码注释简明即可。
+- GUI 与 CLI 是两个独立入口（`Program.Main`），互不引用；修改时保持这一点。
+- 涉及系统设置（注册表、电源方案）的改动必须：默认不写、写前备份、提供撤销。
+
+## 提交流程
+
+1. Fork 仓库并建分支。
+2. 修改后用 `build.bat` 确认能编译通过。
+3. 自测 GUI 与 CLI 的核心功能。
+4. 提交 PR，说明改动目的与测试方法。
+
+## 隐私红线（重要）
+
+本项目源自一次脱敏开源，请把隐私放在第一位：
+
+- 不要把你的用户名、机器名、显示器型号、序列号写进源码、注释或文档。
+- 不要提交 `logs\`、`backup\`、`power-lock-backup.txt`、`battery-saver-backup.txt`、`power-backup.txt` 等运行时产物（已在 `.gitignore`）。
+- 在 issue / PR 里贴日志前先脱敏。
+- 新增示例数据请使用 `examples\` 下的占位符风格（`user=<用户名>`、`host=<主机名>`、`YYYY-MM-DD`）。
+
+## 报告问题
+
+提 issue 时请附上：Windows 版本、笔记本/台式机、内置屏还是外接屏、是否插电、体检脚本输出（脱敏后）、相关日志片段（脱敏后）。

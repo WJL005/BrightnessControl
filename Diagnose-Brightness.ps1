@@ -1,1 +1,313 @@
-77u/PCMKLlNZTk9QU0lTCiAgICDlsY/luZXkuq7luqbkvZPmo4DvvJrmib7lh7rjgIzliLDlupXmmK/osIHlnKjosIPmlbTkuq7luqbjgI3jgIIKCi5ERVNDUklQVElPTgogICAg6YCQ5bGC5qOA5p+lIFdpbmRvd3Mg5LiK5omA5pyJ6IO95pS55Y+Y5bGP5bmV5Lqu5bqm55qE5L2N572u77yM5bm257uZ5Ye657uT6K6644CCCiAgICDpu5jorqTlrozlhajlj6ror7vvvIzkuI3kv67mlLnku7vkvZXorr7nva7jgIIKCi5QQVJBTUVURVIgVGVzdAogICAg6aKd5aSW5YGa5LiA5qyh5YaZ5YWlL+Wbnuivu+S4gOiHtOaAp+a1i+ivle+8iOS8muaKiuS6ruW6puS4tOaXtuiuvuS4uiAxMDAl77yM6ZqP5ZCO6L+Y5Y6f77yJ44CCCiAgICDnlKjkuo7liKTmlq3mmK/lkKblrZjlnKjjgIzkuq7luqbooqvkuozmrKHmjInmr5TkvovljovkvY7jgI3nmoTmg4XlhrXjgIIKCi5QQVJBTUVURVIgV2F0Y2gKICAgIOi/nue7remHh+agt+S6ruW6pueahOenkuaVsO+8jOeUqOS6juinguWvn+S6ruW6puaYr+WQpuWcqOiHquWKqOa8guenu+OAggoKLkVYQU1QTEUKICAgIC5cRGlhZ25vc2UtQnJpZ2h0bmVzcy5wczEKCi5FWEFNUExFCiAgICAuXERpYWdub3NlLUJyaWdodG5lc3MucHMxIC1UZXN0IC1XYXRjaCAzMAojPgpwYXJhbSgKICAgIFtzd2l0Y2hdJFRlc3QsCiAgICBbaW50XSRXYXRjaCA9IDAKKQoKJEVycm9yQWN0aW9uUHJlZmVyZW5jZSA9ICdTaWxlbnRseUNvbnRpbnVlJwoKJGZpbmRpbmdzID0gTmV3LU9iamVjdCBTeXN0ZW0uQ29sbGVjdGlvbnMuQXJyYXlMaXN0CgpmdW5jdGlvbiBTZWN0aW9uKFtzdHJpbmddJHQpIHsKICAgIFdyaXRlLUhvc3QgJycKICAgIFdyaXRlLUhvc3QgKCLilIDilIAgJHQgIiArICgn4pSAJyAqIFtNYXRoXTo6TWF4KDIsIDQ2IC0gJHQuTGVuZ3RoKSkpIC1Gb3JlZ3JvdW5kQ29sb3IgQ3lhbgp9CgpmdW5jdGlvbiBMaW5lKFtzdHJpbmddJGssICR2LCBbc3RyaW5nXSRjb2xvciA9ICdHcmF5JykgewogICAgV3JpdGUtSG9zdCAoJyAgezAsLTE2fScgLWYgKCRrICsgJ++8micpKSAtTm9OZXdsaW5lCiAgICBXcml0ZS1Ib3N0ICR2IC1Gb3JlZ3JvdW5kQ29sb3IgJGNvbG9yCn0KCmZ1bmN0aW9uIEFkZEZpbmRpbmcoW3N0cmluZ10kdGV4dCkgeyBbdm9pZF0kZmluZGluZ3MuQWRkKCR0ZXh0KSB9CgpmdW5jdGlvbiBHZXQtQnJpZ2h0bmVzc1ZhbHVlIHsKICAgICRtb24gPSBAKEdldC1DaW1JbnN0YW5jZSAtTmFtZXNwYWNlIHJvb3QvV01JIC1DbGFzc05hbWUgV21pTW9uaXRvckJyaWdodG5lc3MpCiAgICBpZiAoJG1vbi5Db3VudCAtZXEgMCkgeyByZXR1cm4gJG51bGwgfQogICAgcmV0dXJuIFtpbnRdKCRtb24gfCBXaGVyZS1PYmplY3QgeyAkXy5BY3RpdmUgfSB8IFNlbGVjdC1PYmplY3QgLUZpcnN0IDEpLkN1cnJlbnRCcmlnaHRuZXNzCn0KCmZ1bmN0aW9uIEdldC1Qb3dlclNldHRpbmcoW3N0cmluZ10kc3ViLCBbc3RyaW5nXSRzZXR0aW5nKSB7CiAgICAkb3V0ID0gKHBvd2VyY2ZnIC9xIFNDSEVNRV9DVVJSRU5UICRzdWIgJHNldHRpbmcgMj4kbnVsbCB8IE91dC1TdHJpbmcpCiAgICAkYWNNID0gW3JlZ2V4XTo6TWF0Y2goJG91dCwgJ+W9k+WJjeS6pOa1geeUtea6kOiuvue9rue0ouW8lTpccyoweChbMC05YS1mQS1GXSspJykKICAgICRkY00gPSBbcmVnZXhdOjpNYXRjaCgkb3V0LCAn5b2T5YmN55u05rWB55S15rqQ6K6+572u57Si5byVOlxzKjB4KFswLTlhLWZBLUZdKyknKQogICAgJGFjID0gJG51bGw7ICRkYyA9ICRudWxsCiAgICBpZiAoJGFjTS5TdWNjZXNzKSB7ICRhYyA9IFtDb252ZXJ0XTo6VG9JbnQzMigkYWNNLkdyb3Vwc1sxXS5WYWx1ZSwgMTYpIH0KICAgIGlmICgkZGNNLlN1Y2Nlc3MpIHsgJGRjID0gW0NvbnZlcnRdOjpUb0ludDMyKCRkY00uR3JvdXBzWzFdLlZhbHVlLCAxNikgfQogICAgcmV0dXJuIFtwc2N1c3RvbW9iamVjdF1AeyBBQyA9ICRhYzsgREMgPSAkZGMgfQp9CgpXcml0ZS1Ib3N0ICcnCldyaXRlLUhvc3QgJyAg5bGP5bmV5Lqu5bqm5L2T5qOA5oql5ZGKJyAtRm9yZWdyb3VuZENvbG9yIFdoaXRlCldyaXRlLUhvc3QgKCcgICcgKyAoR2V0LURhdGUgLUZvcm1hdCAneXl5eS1NTS1kZCBISDptbTpzcycpKSAtRm9yZWdyb3VuZENvbG9yIERhcmtHcmF5CgojIOKUgOKUgCAxLiDln7rmnKznjq/looMg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSAClNlY3Rpb24gJzEuIOehrOS7tuS4jumpseWKqCcKJGNzID0gR2V0LUNpbUluc3RhbmNlIFdpbjMyX0NvbXB1dGVyU3lzdGVtCiRvcyA9IEdldC1DaW1JbnN0YW5jZSBXaW4zMl9PcGVyYXRpbmdTeXN0ZW0KTGluZSAn5py65Z6LJyAoInswfSB7MX0iIC1mICRjcy5NYW51ZmFjdHVyZXIsICRjcy5Nb2RlbCkKTGluZSAn57O757ufJyAoInswfSAoQnVpbGQgezF9KSIgLWYgJG9zLkNhcHRpb24sICRvcy5CdWlsZE51bWJlcikKJGdwdSA9IEdldC1DaW1JbnN0YW5jZSBXaW4zMl9WaWRlb0NvbnRyb2xsZXIgfCBXaGVyZS1PYmplY3QgeyAkXy5DdXJyZW50SG9yaXpvbnRhbFJlc29sdXRpb24gfSB8IFNlbGVjdC1PYmplY3QgLUZpcnN0IDEKaWYgKCRncHUpIHsgTGluZSAn5pi+5Y2hJyAoInswfSAvIOmpseWKqCB7MX0iIC1mICRncHUuTmFtZSwgJGdwdS5Ecml2ZXJWZXJzaW9uKSB9CmlmICgkZ3B1KSB7IExpbmUgJ+WIhui+qOeOhycgKCJ7MH0geCB7MX0iIC1mICRncHUuQ3VycmVudEhvcml6b250YWxSZXNvbHV0aW9uLCAkZ3B1LkN1cnJlbnRWZXJ0aWNhbFJlc29sdXRpb24pIH0KCiMg4pSA4pSAIDIuIOS6ruW6puaOpeWPo+iDveWKmyDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIAKU2VjdGlvbiAnMi4g5YaF572u5bGP5Lqu5bqm5o6l5Y+jJwokbWV0aG9kcyA9IEAoR2V0LUNpbUluc3RhbmNlIC1OYW1lc3BhY2Ugcm9vdC9XTUkgLUNsYXNzTmFtZSBXbWlNb25pdG9yQnJpZ2h0bmVzc01ldGhvZHMpCiRtb25pdG9ycyA9IEAoR2V0LUNpbUluc3RhbmNlIC1OYW1lc3BhY2Ugcm9vdC9XTUkgLUNsYXNzTmFtZSBXbWlNb25pdG9yQnJpZ2h0bmVzcykKaWYgKCRtZXRob2RzLkNvdW50IC1ndCAwKSB7CiAgICBMaW5lICdXTUkg5Lqu5bqm5o6l5Y+jJyAn5Y+v55So77yI6ISa5pys5Y+v5Lul5o6n5Yi277yJJyBHcmVlbgogICAgTGluZSAn6Z2i5p2/JyAoJG1vbml0b3JzIHwgU2VsZWN0LU9iamVjdCAtRmlyc3QgMSkuSW5zdGFuY2VOYW1lCiAgICBMaW5lICfmlK/mjIHojIPlm7QnICcwIC0gMTAw77yI5q2l6L+bIDHvvIknCn0gZWxzZSB7CiAgICBMaW5lICdXTUkg5Lqu5bqm5o6l5Y+jJyAn5LiN5Y+v55So77yI6ISa5pys5peg5rOV5o6n5Yi277yJJyBSZWQKICAgIEFkZEZpbmRpbmcgJ+ezu+e7n+acquaatOmcsiBXTUkg5Lqu5bqm5o6l5Y+j77yM6ISa5pys5peg5rOV5o6n5Yi25pys5py66IOM5YWJ44CCJwp9CiRjdXIgPSBHZXQtQnJpZ2h0bmVzc1ZhbHVlCmlmICgkbnVsbCAtbmUgJGN1cikgeyBMaW5lICflvZPliY3kuq7luqYnICgiezB9JSIgLWYgJGN1cikgJ1doaXRlJyB9CgojIOW9k+WJjeeUtea6kOaWueahiCBHVUlE77yI5ZCO57ut5aSa5aSE6KaB55So77yJCiRzY2hlbWVSYXcgPSAocG93ZXJjZmcgL2dldGFjdGl2ZXNjaGVtZSAyPiRudWxsIHwgT3V0LVN0cmluZykKJHNjaGVtZUdpZCA9ICcnCiRtR2lkID0gW3JlZ2V4XTo6TWF0Y2goJHNjaGVtZVJhdywgJyhbMC05YS1mQS1GXXs4fS1bMC05YS1mQS1GXXs0fS1bMC05YS1mQS1GXXs0fS1bMC05YS1mQS1GXXs0fS1bMC05YS1mQS1GXXsxMn0pJykKaWYgKCRtR2lkLlN1Y2Nlc3MpIHsgJHNjaGVtZUdpZCA9ICRtR2lkLkdyb3Vwc1sxXS5WYWx1ZSB9CgojIOKUgOKUgCAzLiDnlLXmsaAgLyDoioLnlLXmqKHlvI8g4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSAClNlY3Rpb24gJzMuIOeUteaxoOS4juiKgueUteaooeW8jycKJGVzU3RhdHVzID0gJG51bGwKdHJ5IHsKICAgICRwbSA9IFtXaW5kb3dzLlN5c3RlbS5Qb3dlci5Qb3dlck1hbmFnZXIsIFdpbmRvd3MuU3lzdGVtLCBDb250ZW50VHlwZSA9IFdpbmRvd3NSdW50aW1lXQogICAgJGVzU3RhdHVzID0gW3N0cmluZ10kcG06OkVuZXJneVNhdmVyU3RhdHVzCiAgICBMaW5lICfoioLnlLXmqKHlvI8nICRlc1N0YXR1cyAnV2hpdGUnCiAgICBMaW5lICfnlLXmsaDnirbmgIEnIChbc3RyaW5nXSRwbTo6QmF0dGVyeVN0YXR1cykKfSBjYXRjaCB7CiAgICBMaW5lICfoioLnlLXmqKHlvI8nICfor7vlj5blpLHotKXvvIhXaW5SVCDkuI3lj6/nlKjvvIknIERhcmtHcmF5Cn0KCiMg6IqC55S15qih5byP5LiL55qE5Lqu5bqm57O75pWw77yI6IqC55S155Sf5pWI5pe277ya5a6e6ZmF5Lqu5bqmID0g6K+35rGC5YC8IMOXIOezu+aVsC8xMDDvvIkKJGJzQ29lZmYgPSAkbnVsbAppZiAoJHNjaGVtZUdpZCkgewogICAgJGJzS2V5ID0gIkhLTE06XFNZU1RFTVxDdXJyZW50Q29udHJvbFNldFxDb250cm9sXFBvd2VyXFVzZXJcUG93ZXJTY2hlbWVzXCRzY2hlbWVHaWRcZGU4MzA5MjMtYTU2Mi00MWFmLWEwODYtZTNhMmM2YmFkMmRhXDEzZDA5ODg0LWY3NGUtNDc0YS1hODUyLWI2YmRlOGFkMDNhOCIKICAgIGlmIChUZXN0LVBhdGggJGJzS2V5KSB7CiAgICAgICAgJGt2ID0gR2V0LUl0ZW1Qcm9wZXJ0eSAtTGl0ZXJhbFBhdGggJGJzS2V5IC1FcnJvckFjdGlvbiBTaWxlbnRseUNvbnRpbnVlCiAgICAgICAgaWYgKCRudWxsIC1uZSAka3YpIHsKICAgICAgICAgICAgaWYgKCRudWxsIC1uZSAka3YuRENTZXR0aW5nSW5kZXgpIHsgJGJzQ29lZmYgPSBbaW50XSRrdi5EQ1NldHRpbmdJbmRleCB9CiAgICAgICAgICAgIGVsc2VpZiAoJG51bGwgLW5lICRrdi5BQ1NldHRpbmdJbmRleCkgeyAkYnNDb2VmZiA9IFtpbnRdJGt2LkFDU2V0dGluZ0luZGV4IH0KICAgICAgICB9CiAgICB9Cn0KaWYgKCRudWxsIC1lcSAkYnNDb2VmZikgeyAkYnNDb2VmZiA9IDcwIH0KJGJzQ29sb3IgPSAnWWVsbG93JwppZiAoJGJzQ29lZmYgLWdlIDEwMCkgeyAkYnNDb2xvciA9ICdHcmVlbicgfQpMaW5lICfoioLnlLXkuq7luqbns7vmlbAnICgiezB9Je+8iOiKgueUteaXtuS6ruW6piA9IOivt+axguWAvCDDlyB7MX0l77yJIiAtZiAkYnNDb2VmZiwgJGJzQ29lZmYpICRic0NvbG9yCgppZiAoJGVzU3RhdHVzIC1lcSAnT24nKSB7CiAgICBpZiAoJGJzQ29lZmYgLWdlIDEwMCkgewogICAgICAgIFdyaXRlLUhvc3QgJyAgwrcg6IqC55S15qih5byP5byA5ZCv77yM5L2G5Lqu5bqm57O75pWw5Li6IDEwMCXvvIzlsY/luZXkuI3kvJrooqvljovmmpfjgIInIC1Gb3JlZ3JvdW5kQ29sb3IgR3JlZW4KICAgIH0KICAgIGVsc2UgewogICAgICAgIFdyaXRlLUhvc3QgKCIgIOKYhSDoioLnlLXmqKHlvI/mraPlnKjlvIDlkK/vvIzkuq7luqbkvJrooqvljovliLDnuqYgezB9JSIgLWYgJGJzQ29lZmYpIC1Gb3JlZ3JvdW5kQ29sb3IgWWVsbG93CiAgICAgICAgV3JpdGUtSG9zdCAoIiAgICDvvIjor7fmsYIgMTAwJSDml7bvvIzlrp7pmYXlj6rog73lvpfliLDnuqYgezB9Je+8iSIgLWYgJGJzQ29lZmYpIC1Gb3JlZ3JvdW5kQ29sb3IgRGFya1llbGxvdwogICAgICAgIEFkZEZpbmRpbmcgKCLnlLXmsaDoioLnlLXmqKHlvI/lpITkuo7lvIDlkK/nirbmgIEg4oCU4oCUIOS6ruW6puiiq+aVtOS9k+aMiee6piB7MH0lIOaKmOWHj+OAgiIgLWYgJGJzQ29lZmYpCiAgICB9Cn0KCiMg4pSA4pSAIDQuIOeUtea6kOaWueahiCDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIAKU2VjdGlvbiAnNC4g55S15rqQ5pa55qGI5Lit55qE5Lqu5bqm6K6+572uJwppZiAoJHNjaGVtZUdpZCkgewogICAgJGdrID0gIkhLTE06XFNZU1RFTVxDdXJyZW50Q29udHJvbFNldFxDb250cm9sXFBvd2VyXFVzZXJcUG93ZXJTY2hlbWVzXCRzY2hlbWVHaWQiCiAgICAkZnJpZW5kbHkgPSAoR2V0LUl0ZW1Qcm9wZXJ0eSAtTGl0ZXJhbFBhdGggJGdrKS5GcmllbmRseU5hbWUKICAgIExpbmUgJ+W9k+WJjeaWueahiCcgKCJ7MH0gICh7MX0pIiAtZiAkZnJpZW5kbHksICRzY2hlbWVHaWQpCn0KJHZpZGVvU3ViID0gJzc1MTZiOTVmLWY3NzYtNDQ2NC04YzUzLTA2MTY3ZjQwY2M5OScKJHBCcmlnaHQgPSBHZXQtUG93ZXJTZXR0aW5nICR2aWRlb1N1YiAnYWRlZDVlODItYjkwOS00NjE5LTk5NDktZjVkNzFkYWMwYmNiJwokcERpbSA9IEdldC1Qb3dlclNldHRpbmcgJHZpZGVvU3ViICdmMWZiZmRlMi1hOTYwLTQxNjUtOWY4OC01MDY2NzkxMWNlOTYnCiRwQWRhcHQgPSBHZXQtUG93ZXJTZXR0aW5nICR2aWRlb1N1YiAnZmJkOWFhNjYtOTU1My00MDk3LWJhNDQtZWQ2ZTlkNjVlYWI4JwokcElkbGUgPSBHZXQtUG93ZXJTZXR0aW5nICR2aWRlb1N1YiAnM2MwYmMwMjEtYzhhOC00ZTA3LWE5NzMtNmIxNGNiY2IyYjdlJwpMaW5lICfmmL7npLrlmajkuq7luqYnICgi5Lqk5rWBIHswfSUgIC8gIOeUteaxoCB7MX0lIiAtZiAkcEJyaWdodC5BQywgJHBCcmlnaHQuREMpCkxpbmUgJ+WPmOaal+WQjuS6ruW6picgKCLkuqTmtYEgezB9JSAgLyAg55S15rGgIHsxfSUiIC1mICRwRGltLkFDLCAkcERpbS5EQykKTGluZSAn5YWz6Zet5pi+56S6JyAoIuS6pOa1gSB7MH0g56eSICAvICDnlLXmsaAgezF9IOenkiIgLWYgJHBJZGxlLkFDLCAkcElkbGUuREMpCiRhZGFwdGl2ZVN0YXRlID0gJ29mZicKaWYgKCRwQWRhcHQuQUMgLWVxIDEgLW9yICRwQWRhcHQuREMgLWVxIDEpIHsKICAgICRhZGFwdGl2ZVN0YXRlID0gJ29uJwogICAgTGluZSAn6Ieq6YCC5bqU5Lqu5bqmJyAn5bey5ZCv55SoJyBZZWxsb3cKICAgIEFkZEZpbmRpbmcgJ+eUtea6kOaWueahiOmHjOeahOOAjOWQr+eUqOiHqumAguW6lOS6ruW6puOAjeWkhOS6juW8gOWQr+eKtuaAgeOAgicKfSBlbHNlIHsKICAgIExpbmUgJ+iHqumAguW6lOS6ruW6picgJ+W3suWFs+mXrScgR3JlZW4KfQppZiAoJHBEaW0uQUMgLW5lICRudWxsIC1hbmQgJHBEaW0uQUMgLWxlIDYwKSB7CiAgICBXcml0ZS1Ib3N0ICgiICDCtyDjgIzlj5jmmpflkI7kuq7luqbjgI3ooqvorr7kuLogezB9Je+8jOiLpemXsue9ruWQjuWPmOaal+eUn+aViO+8jOeci+i1t+adpeWwseaYr+mXtOath+aAp+WPmOaal+OAgiIgLWYgJHBEaW0uQUMpIC1Gb3JlZ3JvdW5kQ29sb3IgRGFya0dyYXkKfQoKIyDilIDilIAgNS4gQU1EIFZhcmktQnJpZ2h0IOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgApTZWN0aW9uICc1LiDmmL7ljaHlsYLvvJpBTUQgVmFyaS1CcmlnaHTvvIjlhoXlrrnoh6rpgILlupTog4zlhYnvvIknCiR2YkhpdHMgPSBAKCkKJHNjYW5Sb290cyA9IEAoCiAgICAnSEtMTTpcU1lTVEVNXEN1cnJlbnRDb250cm9sU2V0XENvbnRyb2xcQ2xhc3NcezRkMzZlOTY4LWUzMjUtMTFjZS1iZmMxLTA4MDAyYmUxMDMxOH0nLAogICAgJ0hLTE06XFNZU1RFTVxDdXJyZW50Q29udHJvbFNldFxDb250cm9sXFZpZGVvJwopCmZvcmVhY2ggKCRyb290IGluICRzY2FuUm9vdHMpIHsKICAgIEdldC1DaGlsZEl0ZW0gJHJvb3QgLVJlY3Vyc2UgLUVycm9yQWN0aW9uIFNpbGVudGx5Q29udGludWUgfCBGb3JFYWNoLU9iamVjdCB7CiAgICAgICAgJHByb3BzID0gR2V0LUl0ZW1Qcm9wZXJ0eSAtTGl0ZXJhbFBhdGggJF8uUFNQYXRoIC1FcnJvckFjdGlvbiBTaWxlbnRseUNvbnRpbnVlCiAgICAgICAgaWYgKCRudWxsIC1uZSAkcHJvcHMgLWFuZCAkbnVsbCAtbmUgJHByb3BzLlBQX1VzZXJWYXJpQnJpZ2h0TGV2ZWwpIHsKICAgICAgICAgICAgJHZiSGl0cyArPSBbcHNjdXN0b21vYmplY3RdQHsKICAgICAgICAgICAgICAgIFBhdGggID0gKCRfLk5hbWUgLXJlcGxhY2UgJ15NaWNyb3NvZnRcLlBvd2VyU2hlbGxcLkNvcmVcXFJlZ2lzdHJ5OjonLCAnJykKICAgICAgICAgICAgICAgIExldmVsID0gJHByb3BzLlBQX1VzZXJWYXJpQnJpZ2h0TGV2ZWwKICAgICAgICAgICAgfQogICAgICAgIH0KICAgIH0KfQokdmJMZXZlbHMgPSAnbm9uZScKaWYgKCR2YkhpdHMuQ291bnQgLWVxIDApIHsKICAgIExpbmUgJ1ZhcmktQnJpZ2h0JyAn5pyq5Y+R546w55u45YWz6YWN572uJyBHcmVlbgp9IGVsc2UgewogICAgJGxldmVscyA9ICgkdmJIaXRzIHwgU2VsZWN0LU9iamVjdCAtRXhwYW5kUHJvcGVydHkgTGV2ZWwgLVVuaXF1ZSkgLWpvaW4gJywgJwogICAgJHZiTGV2ZWxzID0gJGxldmVscwogICAgaWYgKCRsZXZlbHMgLWVxICcwJykgewogICAgICAgIExpbmUgJ1ZhcmktQnJpZ2h0JyAn5bey5YWz6ZetICgwKScgR3JlZW4KICAgIH0gZWxzZSB7CiAgICAgICAgTGluZSAnVmFyaS1CcmlnaHQnICgi5bey5ZCv55So77yM562J57qnICRsZXZlbHPvvIjlh7rnjrDlnKggJCgkdmJIaXRzLkNvdW50KSDlpITms6jlhozooajpobnvvIkiKSBZZWxsb3cKICAgICAgICBXcml0ZS1Ib3N0ICcgIOKYhSBWYXJpLUJyaWdodCDmmK8gQU1EIOeahOOAjOWGheWuueiHqumAguW6lOiDjOWFieOAje+8mueUu+mdouWBj+S6ruaXtuiHquWKqOWOi+S9juiDjOWFieecgeeUte+8jCcgLUZvcmVncm91bmRDb2xvciBZZWxsb3cKICAgICAgICBXcml0ZS1Ib3N0ICcgICAg55S76Z2i5Y+Y5pqX5ZCO5YaN5oqs5Zue5p2lIOKAlOKAlCDov5nmraPmmK/jgIznnIvkuI3lkIzlhoXlrrnml7blv73mmI7lv73mmpfjgI3nmoTlhbjlnovmnaXmupDjgIInIC1Gb3JlZ3JvdW5kQ29sb3IgRGFya1llbGxvdwogICAgICAgIEFkZEZpbmRpbmcgKCdBTUQgVmFyaS1CcmlnaHTvvIjlhoXlrrnoh6rpgILlupTog4zlhYnvvInlpITkuo7lkK/nlKjnirbmgIHvvIznrYnnuqcgJyArICRsZXZlbHMgKyAn44CCJykKICAgIH0KICAgICRzYW1wbGUgPSAkdmJIaXRzIHwgU2VsZWN0LU9iamVjdCAtRmlyc3QgMQogICAgV3JpdGUtSG9zdCAoIiAgICDnpLrkvovkvY3nva7vvJoiICsgJHNhbXBsZS5QYXRoKSAtRm9yZWdyb3VuZENvbG9yIERhcmtHcmF5Cn0KCiMg4pSA4pSAIDYuIOWknOeBryDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIAKU2VjdGlvbiAnNi4g5aSc54Gv77yI6JOd5YWJ6L+H5ruk77yJJwokbmxLZXkgPSAnSEtDVTpcU09GVFdBUkVcTWljcm9zb2Z0XFdpbmRvd3NcQ3VycmVudFZlcnNpb25cQ2xvdWRTdG9yZVxTdG9yZVxEZWZhdWx0QWNjb3VudFxDdXJyZW50XGRlZmF1bHQkd2luZG93cy5kYXRhLmJsdWVsaWdodHJlZHVjdGlvbi5ibHVlbGlnaHRyZWR1Y3Rpb25zdGF0ZVx3aW5kb3dzLmRhdGEuYmx1ZWxpZ2h0cmVkdWN0aW9uLmJsdWVsaWdodHJlZHVjdGlvbnN0YXRlJwokbmxEYXRhID0gKEdldC1JdGVtUHJvcGVydHkgLUxpdGVyYWxQYXRoICRubEtleSAtRXJyb3JBY3Rpb24gU2lsZW50bHlDb250aW51ZSkuRGF0YQppZiAoJG51bGwgLW5lICRubERhdGEpIHsKICAgICRubE9uID0gJGZhbHNlCiAgICBmb3IgKCRpID0gMDsgJGkgLWx0ICgkbmxEYXRhLkNvdW50IC0gMSk7ICRpKyspIHsKICAgICAgICBpZiAoJG5sRGF0YVskaV0gLWVxIDB4MTUgLWFuZCAkbmxEYXRhWyRpICsgMV0gLWVxIDB4ODApIHsgJG5sT24gPSAkdHJ1ZSB9CiAgICB9CiAgICBpZiAoJG5sT24pIHsKICAgICAgICBMaW5lICflpJznga8nICflvIDlkK/vvIjnlLvpnaLkvJrlgY/pu4TlgY/mmpfvvIknIFllbGxvdwogICAgICAgIEFkZEZpbmRpbmcgJ+WknOeBr+W3suW8gOWQr++8jOS8muiuqeWxj+W5leaYvuW+l+abtOaal+abtOm7hOOAgicKICAgIH0gZWxzZSB7CiAgICAgICAgTGluZSAn5aSc54GvJyAn5YWz6ZetJyBHcmVlbgogICAgfQp9IGVsc2UgewogICAgTGluZSAn5aSc54GvJyAn5pyq6YWN572uJyBEYXJrR3JheQp9CgojIOKUgOKUgCA3LiDomZrmi5/mmL7npLogLyDov5zmjqfnsbvpqbHliqgg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSAClNlY3Rpb24gJzcuIOaYvuekuuagiOmHjOeahOesrOS4ieaWuempseWKqOS4jui/nOaOp+i9r+S7ticKJHZkZXZzID0gR2V0LVBucERldmljZSAtRXJyb3JBY3Rpb24gU2lsZW50bHlDb250aW51ZSB8IFdoZXJlLU9iamVjdCB7CiAgICAkXy5GcmllbmRseU5hbWUgLW1hdGNoICdPcmF5fEx1bWlub258VmlydHVhbCBEaXNwbGF5fElERENYfFNwbGFzaHRvcHxWTkN8SWRkJyAtYW5kICRfLlN0YXR1cyAtZXEgJ09LJwp9IHwgU2VsZWN0LU9iamVjdCAtRXhwYW5kUHJvcGVydHkgRnJpZW5kbHlOYW1lIC1VbmlxdWUKaWYgKCR2ZGV2cykgewogICAgZm9yZWFjaCAoJGQgaW4gJHZkZXZzKSB7IFdyaXRlLUhvc3QgKCIgIMK3ICIgKyAkZCkgLUZvcmVncm91bmRDb2xvciBEYXJrR3JheSB9CiAgICBXcml0ZS1Ib3N0ICcgIOi/meS6m+aYr+iZmuaLn+aYvuekuuWZqC/ov5zmjqfnu4Tku7bvvIzpgJrluLjkuI3nm7TmjqXmlLnkuq7luqbvvIzkvYbkvJrlnKjmmL7npLrmoIjph4zlpJrmjILkuIDlsYLjgIInIC1Gb3JlZ3JvdW5kQ29sb3IgRGFya0dyYXkKfSBlbHNlIHsKICAgIExpbmUgJ+esrOS4ieaWueiZmuaLn+aYvuekuicgJ+aXoCcgR3JlZW4KfQokcmVtb3RlID0gR2V0LVByb2Nlc3MgLUVycm9yQWN0aW9uIFNpbGVudGx5Q29udGludWUgfCBXaGVyZS1PYmplY3QgeyAkXy5Qcm9jZXNzTmFtZSAtbWF0Y2ggJ1N1bmxvZ2lufE9yYXl8VHJhbnNjcmVlbnxTcGxhc2h0b3B8dm5jfHdpbnZuY3x0b2Rlc2t8QW55RGVzaycgfSB8IFNlbGVjdC1PYmplY3QgLUV4cGFuZFByb3BlcnR5IFByb2Nlc3NOYW1lIC1VbmlxdWUKaWYgKCRyZW1vdGUpIHsKICAgIExpbmUgJ+i/kOihjOS4reeahOi/nOaOpycgKCRyZW1vdGUgLWpvaW4gJywgJykgWWVsbG93CiAgICBXcml0ZS1Ib3N0ICcgIOaPkOekuu+8mui/nOaOp+i/nuaOpeacn+mXtO+8jOi/nOerr+WPr+S7peaUueWKqOacrOacuuS6ruW6pu+8jOeci+i1t+adpeWwseWDj+iHquW3seWcqOmXquOAgicgLUZvcmVncm91bmRDb2xvciBEYXJrR3JheQp9CgojIOKUgOKUgCA4LiDkuIDoh7TmgKfmtYvor5Ug4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSACmlmICgkVGVzdCAtYW5kICRtZXRob2RzLkNvdW50IC1ndCAwKSB7CiAgICBTZWN0aW9uICc4LiDlhpnlhaUgLyDlm57or7vkuIDoh7TmgKfmtYvor5UnCiAgICAkYmVmb3JlID0gR2V0LUJyaWdodG5lc3NWYWx1ZQogICAgV3JpdGUtSG9zdCAoIiAg5Y6f5aeL5Lqu5bqmIHswfSUg77yM5Li05pe26K6+5Li6IDEwMCUgLi4uIiAtZiAkYmVmb3JlKSAtRm9yZWdyb3VuZENvbG9yIERhcmtHcmF5CiAgICBmb3JlYWNoICgkbSBpbiAkbWV0aG9kcykgewogICAgICAgIEludm9rZS1DaW1NZXRob2QgLUlucHV0T2JqZWN0ICRtIC1NZXRob2ROYW1lIFdtaVNldEJyaWdodG5lc3MgLUFyZ3VtZW50cyBAeyBUaW1lb3V0ID0gMTsgQnJpZ2h0bmVzcyA9IDEwMCB9IHwgT3V0LU51bGwKICAgIH0KICAgIFN0YXJ0LVNsZWVwIC1NaWxsaXNlY29uZHMgNTAwCiAgICAkcGVhayA9IEdldC1CcmlnaHRuZXNzVmFsdWUKCiAgICAjIOaMieWunua1i+avlOS+i+WPjeaOqOi/mOWOn+WAvO+8jOmBv+WFjei/mOWOn+aXtuiiq+WQjOS4gOWxguaKmOWHj+WGjeasoeaLieS9jgogICAgJHNjYWxlID0gMS4wCiAgICBpZiAoJHBlYWsgLWd0IDApIHsgJHNjYWxlID0gJHBlYWsgLyAxMDAuMCB9CiAgICAkcmVzdG9yZSA9IFtpbnRdW21hdGhdOjpDZWlsaW5nKCRiZWZvcmUgLyAkc2NhbGUpCiAgICBpZiAoJHJlc3RvcmUgLWd0IDEwMCkgeyAkcmVzdG9yZSA9IDEwMCB9CiAgICBpZiAoJHJlc3RvcmUgLWx0IDApIHsgJHJlc3RvcmUgPSAwIH0KCiAgICBmb3JlYWNoICgkbSBpbiAkbWV0aG9kcykgewogICAgICAgIEludm9rZS1DaW1NZXRob2QgLUlucHV0T2JqZWN0ICRtIC1NZXRob2ROYW1lIFdtaVNldEJyaWdodG5lc3MgLUFyZ3VtZW50cyBAeyBUaW1lb3V0ID0gMTsgQnJpZ2h0bmVzcyA9ICRyZXN0b3JlIH0gfCBPdXQtTnVsbAogICAgfQogICAgTGluZSAn6K+35rGCIDEwMCUnICgn5a6e6ZmFICcgKyAkcGVhayArICclJykKICAgIGlmICgkcGVhayAtbHQgOTgpIHsKICAgICAgICAkcGN0ID0gW21hdGhdOjpSb3VuZCgkcGVhaywgMCkKICAgICAgICBXcml0ZS1Ib3N0ICgiICDimIUg6K+35rGCIDEwMCUg5Y+q5b6X5YiwIHswfSXvvIzor7TmmI7ov5jmnInkuIDlsYLlj6rkv53nlZnkuobnuqYgezF9JSDnmoTkuq7luqbjgIIiIC1mICRwZWFrLCAkcGN0KSAtRm9yZWdyb3VuZENvbG9yIFllbGxvdwogICAgICAgIEFkZEZpbmRpbmcgKCfkuq7luqbooqvkuozmrKHmipjlh4/vvJror7fmsYIgMTAwJSDlj6rlvpfliLAgJyArICRwZWFrICsgJyXjgIInKQogICAgfSBlbHNlIHsKICAgICAgICBXcml0ZS1Ib3N0ICcgIOWGmeWFpeS4juWbnuivu+S4gOiHtO+8jOS6ruW6puayoeacieiiq+mineWkluaKmOWHj+OAgicgLUZvcmVncm91bmRDb2xvciBHcmVlbgogICAgfQp9CgojIOKUgOKUgCA5LiDph4fmoLcg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSACmlmICgkV2F0Y2ggLWd0IDApIHsKICAgIFNlY3Rpb24gKCI5LiDkuq7luqbph4fmoLfvvIh7MH0g56eS77yJIiAtZiAkV2F0Y2gpCiAgICAkYmVnaW4gPSBHZXQtRGF0ZQogICAgJHZhbHVlcyA9IEAoKQogICAgd2hpbGUgKCgoR2V0LURhdGUpIC0gJGJlZ2luKS5Ub3RhbFNlY29uZHMgLWx0ICRXYXRjaCkgewogICAgICAgICR2ID0gR2V0LUJyaWdodG5lc3NWYWx1ZQogICAgICAgICR2YWx1ZXMgKz0gJHYKICAgICAgICBXcml0ZS1Ib3N0ICgiICB7MDpISDptbTpzc30gICB7MX0lIiAtZiAoR2V0LURhdGUpLCAkdikKICAgICAgICBTdGFydC1TbGVlcCAtU2Vjb25kcyAxCiAgICB9CiAgICAkdW5pcSA9ICR2YWx1ZXMgfCBTb3J0LU9iamVjdCAtVW5pcXVlCiAgICBMaW5lICflh7rnjrDov4fnmoTlgLwnICgoJHVuaXEgfCBGb3JFYWNoLU9iamVjdCB7ICIkXyUiIH0pIC1qb2luICcsICcpCiAgICBpZiAoJHVuaXEuQ291bnQgLWd0IDEpIHsKICAgICAgICBBZGRGaW5kaW5nICfph4fmoLfmnJ/pl7Tkuq7luqboh6rooYzlj5HnlJ/lj5jljJbvvIzlrZjlnKjoh6rliqjosIPlhYnooYzkuLrjgIInCiAgICB9Cn0KCiMg4pSA4pSAIOe7k+iuuiDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIAKU2VjdGlvbiAn57uT6K66JwppZiAoJGZpbmRpbmdzLkNvdW50IC1lcSAwKSB7CiAgICBXcml0ZS1Ib3N0ICcgIOayoeacieWPkeeOsOaYjuaYvueahOiHquWKqOiwg+WFieadpea6kOOAgicgLUZvcmVncm91bmRDb2xvciBHcmVlbgogICAgV3JpdGUtSG9zdCAnICDoi6XkuLvop4LkuIrku43op4nlvpflv73mmI7lv73mmpfvvIzor7fnlKggLVdhdGNoIDYwIOmHh+agt+S4gOasoe+8jOW5tuWcqOi/h+eoi+S4reWIh+aNoueql+WPoy/op4bpopHjgIInIC1Gb3JlZ3JvdW5kQ29sb3IgRGFya0dyYXkKfSBlbHNlIHsKICAgICRuID0gMQogICAgZm9yZWFjaCAoJGYgaW4gJGZpbmRpbmdzKSB7CiAgICAgICAgV3JpdGUtSG9zdCAoIiAgezB9LiB7MX0iIC1mICRuLCAkZikgLUZvcmVncm91bmRDb2xvciBZZWxsb3cKICAgICAgICAkbisrCiAgICB9Cn0KV3JpdGUtSG9zdCAnJwpXcml0ZS1Ib3N0ICcgIOS/ruWkjeW7uuiuru+8mui/kOihjCAuXEZpeC1CcmlnaHRuZXNzLVNvdXJjZS5wczHvvIjpu5jorqTlj6rmvJTnu4PvvIzliqAgLUFwcGx5IOaJjeWGmeWFpe+8iScgLUZvcmVncm91bmRDb2xvciBEYXJrR3JheQoKIyDilIDilIAg6K6w5b2V5pys5qyh5L2T5qOA57uT5p6cIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgAp0cnkgewogICAgJGxvZ0RpciA9IEpvaW4tUGF0aCAkUFNTY3JpcHRSb290ICdsb2dzJwogICAgaWYgKC1ub3QgKFRlc3QtUGF0aCAtTGl0ZXJhbFBhdGggJGxvZ0RpcikpIHsKICAgICAgICBOZXctSXRlbSAtSXRlbVR5cGUgRGlyZWN0b3J5IC1QYXRoICRsb2dEaXIgLUZvcmNlIHwgT3V0LU51bGwKICAgIH0KICAgICRsb2dGaWxlID0gSm9pbi1QYXRoICRsb2dEaXIgKCdkaWFnbm9zZS17MH0ubG9nJyAtZiAoR2V0LURhdGUgLUZvcm1hdCAneXl5eU1NZGQnKSkKICAgICRmaW5kaW5nVGV4dCA9ICdub25lJwogICAgaWYgKCRmaW5kaW5ncy5Db3VudCAtZ3QgMCkgeyAkZmluZGluZ1RleHQgPSAoJGZpbmRpbmdzIC1qb2luICcgOyAnKSB9CiAgICAkbGluZSA9ICd7MH0gfCBESUFHIHwgYnJpZ2h0bmVzcz17MX0gfCBlcz17Mn0gfCBic0NvZWZmPXszfSB8IHZhcmlCcmlnaHQ9ezR9IHwgYWRhcHRpdmU9ezV9IHwgZmluZGluZ3M9ezZ9IHwgezd9JyAtZiBgCiAgICAgICAgKEdldC1EYXRlIC1Gb3JtYXQgJ3l5eXktTU0tZGQgSEg6bW06c3MnKSwgJGN1ciwgJGVzU3RhdHVzLCAkYnNDb2VmZiwgJHZiTGV2ZWxzLCAkYWRhcHRpdmVTdGF0ZSwgJGZpbmRpbmdzLkNvdW50LCAkZmluZGluZ1RleHQKICAgIFtTeXN0ZW0uSU8uRmlsZV06OkFwcGVuZEFsbFRleHQoJGxvZ0ZpbGUsICRsaW5lICsgW0Vudmlyb25tZW50XTo6TmV3TGluZSwKICAgICAgICAoTmV3LU9iamVjdCBTeXN0ZW0uVGV4dC5VVEY4RW5jb2RpbmcoJGZhbHNlKSkpCiAgICBXcml0ZS1Ib3N0ICgiICDmnKzmrKHkvZPmo4Dlt7LorrDlvZXvvJp7MH0iIC1mICRsb2dGaWxlKSAtRm9yZWdyb3VuZENvbG9yIERhcmtHcmF5Cn0KY2F0Y2ggeyB9CldyaXRlLUhvc3QgJycK
+﻿<#
+.SYNOPSIS
+    屏幕亮度体检：找出「到底是谁在调整亮度」。
+
+.DESCRIPTION
+    逐层检查 Windows 上所有能改变屏幕亮度的位置，并给出结论。
+    默认完全只读，不修改任何设置。
+
+.PARAMETER Test
+    额外做一次写入/回读一致性测试（会把亮度临时设为 100%，随后还原）。
+    用于判断是否存在「亮度被二次按比例压低」的情况。
+
+.PARAMETER Watch
+    连续采样亮度的秒数，用于观察亮度是否在自动漂移。
+
+.EXAMPLE
+    .\Diagnose-Brightness.ps1
+
+.EXAMPLE
+    .\Diagnose-Brightness.ps1 -Test -Watch 30
+#>
+param(
+    [switch]$Test,
+    [int]$Watch = 0
+)
+
+$ErrorActionPreference = 'SilentlyContinue'
+
+$findings = New-Object System.Collections.ArrayList
+
+function Section([string]$t) {
+    Write-Host ''
+    Write-Host ("── $t " + ('─' * [Math]::Max(2, 46 - $t.Length))) -ForegroundColor Cyan
+}
+
+function Line([string]$k, $v, [string]$color = 'Gray') {
+    Write-Host ('  {0,-16}' -f ($k + '：')) -NoNewline
+    Write-Host $v -ForegroundColor $color
+}
+
+function AddFinding([string]$text) { [void]$findings.Add($text) }
+
+function Get-BrightnessValue {
+    $mon = @(Get-CimInstance -Namespace root/WMI -ClassName WmiMonitorBrightness)
+    if ($mon.Count -eq 0) { return $null }
+    return [int]($mon | Where-Object { $_.Active } | Select-Object -First 1).CurrentBrightness
+}
+
+function Get-PowerSetting([string]$sub, [string]$setting) {
+    $out = (powercfg /q SCHEME_CURRENT $sub $setting 2>$null | Out-String)
+    $acM = [regex]::Match($out, '当前交流电源设置索引:\s*0x([0-9a-fA-F]+)')
+    $dcM = [regex]::Match($out, '当前直流电源设置索引:\s*0x([0-9a-fA-F]+)')
+    $ac = $null; $dc = $null
+    if ($acM.Success) { $ac = [Convert]::ToInt32($acM.Groups[1].Value, 16) }
+    if ($dcM.Success) { $dc = [Convert]::ToInt32($dcM.Groups[1].Value, 16) }
+    return [pscustomobject]@{ AC = $ac; DC = $dc }
+}
+
+Write-Host ''
+Write-Host '  屏幕亮度体检报告' -ForegroundColor White
+Write-Host ('  ' + (Get-Date -Format 'yyyy-MM-dd HH:mm:ss')) -ForegroundColor DarkGray
+
+# ── 1. 基本环境 ─────────────────────────────────────────────
+Section '1. 硬件与驱动'
+$cs = Get-CimInstance Win32_ComputerSystem
+$os = Get-CimInstance Win32_OperatingSystem
+Line '机型' ("{0} {1}" -f $cs.Manufacturer, $cs.Model)
+Line '系统' ("{0} (Build {1})" -f $os.Caption, $os.BuildNumber)
+$gpu = Get-CimInstance Win32_VideoController | Where-Object { $_.CurrentHorizontalResolution } | Select-Object -First 1
+if ($gpu) { Line '显卡' ("{0} / 驱动 {1}" -f $gpu.Name, $gpu.DriverVersion) }
+if ($gpu) { Line '分辨率' ("{0} x {1}" -f $gpu.CurrentHorizontalResolution, $gpu.CurrentVerticalResolution) }
+
+# ── 2. 亮度接口能力 ─────────────────────────────────────────
+Section '2. 内置屏亮度接口'
+$methods = @(Get-CimInstance -Namespace root/WMI -ClassName WmiMonitorBrightnessMethods)
+$monitors = @(Get-CimInstance -Namespace root/WMI -ClassName WmiMonitorBrightness)
+if ($methods.Count -gt 0) {
+    Line 'WMI 亮度接口' '可用（脚本可以控制）' Green
+    Line '面板' ($monitors | Select-Object -First 1).InstanceName
+    Line '支持范围' '0 - 100（步进 1）'
+} else {
+    Line 'WMI 亮度接口' '不可用（脚本无法控制）' Red
+    AddFinding '系统未暴露 WMI 亮度接口，脚本无法控制本机背光。'
+}
+$cur = Get-BrightnessValue
+if ($null -ne $cur) { Line '当前亮度' ("{0}%" -f $cur) 'White' }
+
+# 当前电源方案 GUID（后续多处要用）
+$schemeRaw = (powercfg /getactivescheme 2>$null | Out-String)
+$schemeGid = ''
+$mGid = [regex]::Match($schemeRaw, '([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})')
+if ($mGid.Success) { $schemeGid = $mGid.Groups[1].Value }
+
+# ── 3. 电池 / 节电模式 ──────────────────────────────────────
+Section '3. 电池与节电模式'
+$esStatus = $null
+try {
+    $pm = [Windows.System.Power.PowerManager, Windows.System, ContentType = WindowsRuntime]
+    $esStatus = [string]$pm::EnergySaverStatus
+    Line '节电模式' $esStatus 'White'
+    Line '电池状态' ([string]$pm::BatteryStatus)
+} catch {
+    Line '节电模式' '读取失败（WinRT 不可用）' DarkGray
+}
+
+# 节电模式下的亮度系数（节电生效时：实际亮度 = 请求值 × 系数/100）
+$bsCoeff = $null
+if ($schemeGid) {
+    $bsKey = "HKLM:\SYSTEM\CurrentControlSet\Control\Power\User\PowerSchemes\$schemeGid\de830923-a562-41af-a086-e3a2c6bad2da\13d09884-f74e-474a-a852-b6bde8ad03a8"
+    if (Test-Path $bsKey) {
+        $kv = Get-ItemProperty -LiteralPath $bsKey -ErrorAction SilentlyContinue
+        if ($null -ne $kv) {
+            if ($null -ne $kv.DCSettingIndex) { $bsCoeff = [int]$kv.DCSettingIndex }
+            elseif ($null -ne $kv.ACSettingIndex) { $bsCoeff = [int]$kv.ACSettingIndex }
+        }
+    }
+}
+if ($null -eq $bsCoeff) { $bsCoeff = 70 }
+$bsColor = 'Yellow'
+if ($bsCoeff -ge 100) { $bsColor = 'Green' }
+Line '节电亮度系数' ("{0}%（节电时亮度 = 请求值 × {1}%）" -f $bsCoeff, $bsCoeff) $bsColor
+
+if ($esStatus -eq 'On') {
+    if ($bsCoeff -ge 100) {
+        Write-Host '  · 节电模式开启，但亮度系数为 100%，屏幕不会被压暗。' -ForegroundColor Green
+    }
+    else {
+        Write-Host ("  ★ 节电模式正在开启，亮度会被压到约 {0}%" -f $bsCoeff) -ForegroundColor Yellow
+        Write-Host ("    （请求 100% 时，实际只能得到约 {0}%）" -f $bsCoeff) -ForegroundColor DarkYellow
+        AddFinding ("电池节电模式处于开启状态 —— 亮度被整体按约 {0}% 折减。" -f $bsCoeff)
+    }
+}
+
+# ── 4. 电源方案 ─────────────────────────────────────────────
+Section '4. 电源方案中的亮度设置'
+if ($schemeGid) {
+    $gk = "HKLM:\SYSTEM\CurrentControlSet\Control\Power\User\PowerSchemes\$schemeGid"
+    $friendly = (Get-ItemProperty -LiteralPath $gk).FriendlyName
+    Line '当前方案' ("{0}  ({1})" -f $friendly, $schemeGid)
+}
+$videoSub = '7516b95f-f776-4464-8c53-06167f40cc99'
+$pBright = Get-PowerSetting $videoSub 'aded5e82-b909-4619-9949-f5d71dac0bcb'
+$pDim = Get-PowerSetting $videoSub 'f1fbfde2-a960-4165-9f88-50667911ce96'
+$pAdapt = Get-PowerSetting $videoSub 'fbd9aa66-9553-4097-ba44-ed6e9d65eab8'
+$pIdle = Get-PowerSetting $videoSub '3c0bc021-c8a8-4e07-a973-6b14cbcb2b7e'
+Line '显示器亮度' ("交流 {0}%  /  电池 {1}%" -f $pBright.AC, $pBright.DC)
+Line '变暗后亮度' ("交流 {0}%  /  电池 {1}%" -f $pDim.AC, $pDim.DC)
+Line '关闭显示' ("交流 {0} 秒  /  电池 {1} 秒" -f $pIdle.AC, $pIdle.DC)
+$adaptiveState = 'off'
+if ($pAdapt.AC -eq 1 -or $pAdapt.DC -eq 1) {
+    $adaptiveState = 'on'
+    Line '自适应亮度' '已启用' Yellow
+    AddFinding '电源方案里的「启用自适应亮度」处于开启状态。'
+} else {
+    Line '自适应亮度' '已关闭' Green
+}
+if ($pDim.AC -ne $null -and $pDim.AC -le 60) {
+    Write-Host ("  · 「变暗后亮度」被设为 {0}%，若闲置后变暗生效，看起来就是间歇性变暗。" -f $pDim.AC) -ForegroundColor DarkGray
+}
+
+# ── 5. AMD Vari-Bright ─────────────────────────────────────
+Section '5. 显卡层：AMD Vari-Bright（内容自适应背光）'
+$vbHits = @()
+$scanRoots = @(
+    'HKLM:\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}',
+    'HKLM:\SYSTEM\CurrentControlSet\Control\Video'
+)
+foreach ($root in $scanRoots) {
+    Get-ChildItem $root -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
+        $props = Get-ItemProperty -LiteralPath $_.PSPath -ErrorAction SilentlyContinue
+        if ($null -ne $props -and $null -ne $props.PP_UserVariBrightLevel) {
+            $vbHits += [pscustomobject]@{
+                Path  = ($_.Name -replace '^Microsoft\.PowerShell\.Core\\Registry::', '')
+                Level = $props.PP_UserVariBrightLevel
+            }
+        }
+    }
+}
+$vbLevels = 'none'
+if ($vbHits.Count -eq 0) {
+    Line 'Vari-Bright' '未发现相关配置' Green
+} else {
+    $levels = ($vbHits | Select-Object -ExpandProperty Level -Unique) -join ', '
+    $vbLevels = $levels
+    if ($levels -eq '0') {
+        Line 'Vari-Bright' '已关闭 (0)' Green
+    } else {
+        Line 'Vari-Bright' ("已启用，等级 $levels（出现在 $($vbHits.Count) 处注册表项）") Yellow
+        Write-Host '  ★ Vari-Bright 是 AMD 的「内容自适应背光」：画面偏亮时自动压低背光省电，' -ForegroundColor Yellow
+        Write-Host '    画面变暗后再抬回来 —— 这正是「看不同内容时忽明忽暗」的典型来源。' -ForegroundColor DarkYellow
+        AddFinding ('AMD Vari-Bright（内容自适应背光）处于启用状态，等级 ' + $levels + '。')
+    }
+    $sample = $vbHits | Select-Object -First 1
+    Write-Host ("    示例位置：" + $sample.Path) -ForegroundColor DarkGray
+}
+
+# ── 6. 夜灯 ────────────────────────────────────────────────
+Section '6. 夜灯（蓝光过滤）'
+$nlKey = 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\CloudStore\Store\DefaultAccount\Current\default$windows.data.bluelightreduction.bluelightreductionstate\windows.data.bluelightreduction.bluelightreductionstate'
+$nlData = (Get-ItemProperty -LiteralPath $nlKey -ErrorAction SilentlyContinue).Data
+if ($null -ne $nlData) {
+    $nlOn = $false
+    for ($i = 0; $i -lt ($nlData.Count - 1); $i++) {
+        if ($nlData[$i] -eq 0x15 -and $nlData[$i + 1] -eq 0x80) { $nlOn = $true }
+    }
+    if ($nlOn) {
+        Line '夜灯' '开启（画面会偏黄偏暗）' Yellow
+        AddFinding '夜灯已开启，会让屏幕显得更暗更黄。'
+    } else {
+        Line '夜灯' '关闭' Green
+    }
+} else {
+    Line '夜灯' '未配置' DarkGray
+}
+
+# ── 7. 虚拟显示 / 远控类驱动 ────────────────────────────────
+Section '7. 显示栈里的第三方驱动与远控软件'
+$vdevs = Get-PnpDevice -ErrorAction SilentlyContinue | Where-Object {
+    $_.FriendlyName -match 'Oray|Luminon|Virtual Display|IDDCX|Splashtop|VNC|Idd' -and $_.Status -eq 'OK'
+} | Select-Object -ExpandProperty FriendlyName -Unique
+if ($vdevs) {
+    foreach ($d in $vdevs) { Write-Host ("  · " + $d) -ForegroundColor DarkGray }
+    Write-Host '  这些是虚拟显示器/远控组件，通常不直接改亮度，但会在显示栈里多挂一层。' -ForegroundColor DarkGray
+} else {
+    Line '第三方虚拟显示' '无' Green
+}
+$remote = Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -match 'Sunlogin|Oray|Transcreen|Splashtop|vnc|winvnc|todesk|AnyDesk' } | Select-Object -ExpandProperty ProcessName -Unique
+if ($remote) {
+    Line '运行中的远控' ($remote -join ', ') Yellow
+    Write-Host '  提示：远控连接期间，远端可以改动本机亮度，看起来就像自己在闪。' -ForegroundColor DarkGray
+}
+
+# ── 8. 一致性测试 ──────────────────────────────────────────
+if ($Test -and $methods.Count -gt 0) {
+    Section '8. 写入 / 回读一致性测试'
+    $before = Get-BrightnessValue
+    Write-Host ("  原始亮度 {0}% ，临时设为 100% ..." -f $before) -ForegroundColor DarkGray
+    foreach ($m in $methods) {
+        Invoke-CimMethod -InputObject $m -MethodName WmiSetBrightness -Arguments @{ Timeout = 1; Brightness = 100 } | Out-Null
+    }
+    Start-Sleep -Milliseconds 500
+    $peak = Get-BrightnessValue
+
+    # 按实测比例反推还原值，避免还原时被同一层折减再次拉低
+    $scale = 1.0
+    if ($peak -gt 0) { $scale = $peak / 100.0 }
+    $restore = [int][math]::Ceiling($before / $scale)
+    if ($restore -gt 100) { $restore = 100 }
+    if ($restore -lt 0) { $restore = 0 }
+
+    foreach ($m in $methods) {
+        Invoke-CimMethod -InputObject $m -MethodName WmiSetBrightness -Arguments @{ Timeout = 1; Brightness = $restore } | Out-Null
+    }
+    Line '请求 100%' ('实际 ' + $peak + '%')
+    if ($peak -lt 98) {
+        $pct = [math]::Round($peak, 0)
+        Write-Host ("  ★ 请求 100% 只得到 {0}%，说明还有一层只保留了约 {1}% 的亮度。" -f $peak, $pct) -ForegroundColor Yellow
+        AddFinding ('亮度被二次折减：请求 100% 只得到 ' + $peak + '%。')
+    } else {
+        Write-Host '  写入与回读一致，亮度没有被额外折减。' -ForegroundColor Green
+    }
+}
+
+# ── 9. 采样 ────────────────────────────────────────────────
+if ($Watch -gt 0) {
+    Section ("9. 亮度采样（{0} 秒）" -f $Watch)
+    $begin = Get-Date
+    $values = @()
+    while (((Get-Date) - $begin).TotalSeconds -lt $Watch) {
+        $v = Get-BrightnessValue
+        $values += $v
+        Write-Host ("  {0:HH:mm:ss}   {1}%" -f (Get-Date), $v)
+        Start-Sleep -Seconds 1
+    }
+    $uniq = $values | Sort-Object -Unique
+    Line '出现过的值' (($uniq | ForEach-Object { "$_%" }) -join ', ')
+    if ($uniq.Count -gt 1) {
+        AddFinding '采样期间亮度自行发生变化，存在自动调光行为。'
+    }
+}
+
+# ── 结论 ───────────────────────────────────────────────────
+Section '结论'
+if ($findings.Count -eq 0) {
+    Write-Host '  没有发现明显的自动调光来源。' -ForegroundColor Green
+    Write-Host '  若主观上仍觉得忽明忽暗，请用 -Watch 60 采样一次，并在过程中切换窗口/视频。' -ForegroundColor DarkGray
+} else {
+    $n = 1
+    foreach ($f in $findings) {
+        Write-Host ("  {0}. {1}" -f $n, $f) -ForegroundColor Yellow
+        $n++
+    }
+}
+Write-Host ''
+Write-Host '  修复建议：运行 .\Fix-Brightness-Source.ps1（默认只演练，加 -Apply 才写入）' -ForegroundColor DarkGray
+
+# ── 记录本次体检结果 ────────────────────────────────────────
+try {
+    $logDir = Join-Path $PSScriptRoot 'logs'
+    if (-not (Test-Path -LiteralPath $logDir)) {
+        New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+    }
+    $logFile = Join-Path $logDir ('diagnose-{0}.log' -f (Get-Date -Format 'yyyyMMdd'))
+    $findingText = 'none'
+    if ($findings.Count -gt 0) { $findingText = ($findings -join ' ; ') }
+    $line = '{0} | DIAG | brightness={1} | es={2} | bsCoeff={3} | variBright={4} | adaptive={5} | findings={6} | {7}' -f `
+        (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), $cur, $esStatus, $bsCoeff, $vbLevels, $adaptiveState, $findings.Count, $findingText
+    [System.IO.File]::AppendAllText($logFile, $line + [Environment]::NewLine,
+        (New-Object System.Text.UTF8Encoding($false)))
+    Write-Host ("  本次体检已记录：{0}" -f $logFile) -ForegroundColor DarkGray
+}
+catch { }
+Write-Host ''
