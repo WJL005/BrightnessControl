@@ -15,7 +15,7 @@ namespace BrightnessApp
 {
     static class Program
     {
-        public const string Version = "1.1.9";
+        public const string Version = "1.3.0";
 
         [STAThread]
         static void Main()
@@ -1171,6 +1171,83 @@ namespace BrightnessApp
         }
     }
 
+    // ── CPU 频率 / 占用率 ────────────────────────────────────
+    // 本机没有功率传感器（Power Meter 与放电速率均为无效哨兵值），
+    // 用「基频 × % Processor Performance」反映实际睿频，占用率取 % Processor Time。
+    static class CpuMeter
+    {
+        static PerformanceCounter _freq;
+        static PerformanceCounter _perf;
+        static PerformanceCounter _time;
+        static bool _failed;
+
+        static void Init()
+        {
+            if (_freq != null || _failed) return;
+            try
+            {
+                _freq = new PerformanceCounter("Processor Information", "Processor Frequency", "_Total");
+                _perf = new PerformanceCounter("Processor Information", "% Processor Performance", "_Total");
+                _time = new PerformanceCounter("Processor Information", "% Processor Time", "_Total");
+                _freq.NextValue();
+                _perf.NextValue();
+                _time.NextValue();
+            }
+            catch
+            {
+                _failed = true;
+                _freq = null;
+            }
+        }
+
+        public static void Preload()
+        {
+            Init();
+        }
+
+        public static double FreqMhz()
+        {
+            Init();
+            if (_freq == null) return -1;
+            try
+            {
+                float baseMhz = _freq.NextValue();
+                float perf = _perf.NextValue();
+                if (baseMhz <= 0) return -1;
+                return baseMhz * perf / 100.0;
+            }
+            catch { return -1; }
+        }
+
+        public static int LoadPercent()
+        {
+            Init();
+            if (_time == null) return -1;
+            try
+            {
+                float v = _time.NextValue();
+                if (v < 0) return -1;
+                if (v > 100) v = 100;
+                return (int)Math.Round(v);
+            }
+            catch { return -1; }
+        }
+
+        public static string FreqText()
+        {
+            double mhz = FreqMhz();
+            if (mhz <= 0) return "读取失败";
+            if (mhz >= 1000) return (mhz / 1000.0).ToString("0.00") + " GHz";
+            return ((int)Math.Round(mhz)) + " MHz";
+        }
+
+        public static string LoadText()
+        {
+            int v = LoadPercent();
+            return v < 0 ? "读取失败" : (v + "%");
+        }
+    }
+
     // ── 系统信息 ─────────────────────────────────────────────
     static class SysInfo
     {
@@ -1603,6 +1680,86 @@ namespace BrightnessApp
         }
     }
 
+    // ── 左侧导航项（图标 + 文字，选中为浅蓝胶囊） ─────────────
+    class NavButton : Control
+    {
+        public string Glyph = "";
+        public bool Active;
+        bool _hover;
+
+        public NavButton()
+        {
+            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer
+                | ControlStyles.UserPaint | ControlStyles.ResizeRedraw, true);
+            Cursor = Cursors.Hand;
+        }
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left) OnClick(EventArgs.Empty);
+            base.OnMouseDown(e);
+        }
+
+        protected override void OnMouseEnter(EventArgs e)
+        {
+            _hover = true;
+            Invalidate();
+            base.OnMouseEnter(e);
+        }
+
+        protected override void OnMouseLeave(EventArgs e)
+        {
+            _hover = false;
+            Invalidate();
+            base.OnMouseLeave(e);
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            Graphics g = e.Graphics;
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            Rectangle area = new Rectangle(8, 2, Width - 16, Height - 4);
+
+            Color back = Active ? Color.FromArgb(205, 228, 250)
+                        : (_hover ? Color.FromArgb(233, 241, 252) : Color.Empty);
+            if (back != Color.Empty)
+            {
+                using (var p = RoundRect(area, 8))
+                using (var b = new SolidBrush(back))
+                    g.FillPath(b, p);
+            }
+
+            Color fore = Active ? Color.FromArgb(18, 66, 116) : Color.FromArgb(64, 70, 82);
+            if (Glyph.Length > 0)
+            {
+                using (var f = new Font("Segoe MDL2 Assets", 11F))
+                using (var b = new SolidBrush(fore))
+                {
+                    var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+                    g.DrawString(Glyph, f, b, new Rectangle(area.Left + 4, area.Top, 30, area.Height), sf);
+                }
+            }
+            using (var f = new Font(Font.FontFamily, 10F, Active ? FontStyle.Bold : FontStyle.Regular))
+            using (var b = new SolidBrush(fore))
+            {
+                var sf = new StringFormat { Alignment = StringAlignment.Near, LineAlignment = StringAlignment.Center };
+                g.DrawString(Text, f, b, new Rectangle(area.Left + 40, area.Top, area.Width - 44, area.Height), sf);
+            }
+        }
+
+        static System.Drawing.Drawing2D.GraphicsPath RoundRect(Rectangle r, int radius)
+        {
+            var p = new System.Drawing.Drawing2D.GraphicsPath();
+            int d = Math.Max(2, radius * 2);
+            p.AddArc(r.Left, r.Top, d, d, 180, 90);
+            p.AddArc(r.Right - d, r.Top, d, d, 270, 90);
+            p.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
+            p.AddArc(r.Left, r.Bottom - d, d, d, 90, 90);
+            p.CloseFigure();
+            return p;
+        }
+    }
+
     // ── 主窗口 ───────────────────────────────────────────────
     class MainForm : Form
     {
@@ -1656,6 +1813,13 @@ namespace BrightnessApp
         readonly ListView _list = new ListView();
         readonly Label _lblLogPath = new Label();
 
+        // 左侧导航与分页
+        readonly Panel _pageHost = new Panel();
+        readonly Label _navMode = new Label();
+        readonly Label _navPower = new Label();
+        NavButton[] _navs;
+        Panel[] _pages;
+
         NotifyIcon _tray;
         bool _exiting;
         bool _msgSticky;
@@ -1676,8 +1840,8 @@ namespace BrightnessApp
         {
             Text = "亮度控制 " + Program.Version + " · " + Environment.MachineName + " · " + Environment.UserName;
             StartPosition = FormStartPosition.Manual;
-            ClientSize = new Size(1080, 1038);
-            MinimumSize = new Size(1100, 700);
+            ClientSize = new Size(1080, 740);
+            MinimumSize = new Size(1090, 660);
             Font = PickFont();
             BackColor = Color.FromArgb(250, 250, 252);
             Icon = MakeIcon();
@@ -1691,7 +1855,8 @@ namespace BrightnessApp
             _debounce.Tick += (s, e) => { _debounce.Stop(); ApplyBrightness(_track.Value); };
 
             _poll = new Timer { Interval = 2000 };
-            _poll.Tick += (s, e) => { PollBrightness(); CheckPowerSource(); };
+            _poll.Tick += (s, e) => { PollBrightness(); CheckPowerSource(); UpdateCpuMeter(); };
+            System.Threading.ThreadPool.QueueUserWorkItem(delegate { CpuMeter.Preload(); });
 
             _retry = new Timer { Interval = 1500 };
             _retry.Tick += (s, e) => { _retry.Stop(); RefreshStatus(); };
@@ -1828,35 +1993,278 @@ namespace BrightnessApp
                 Location = new Point(wa.Left + (wa.Width - w) / 2,
                                      wa.Top + (wa.Height - h) / 2);
             }
-            catch { }
+            catch (Exception ex) { try { LogStore.Write("WARN", "fit fail: " + ex.Message); } catch { } }
         }
 
         void BuildLayout()
         {
-            var root = new TableLayoutPanel
+            SuspendLayout();
+
+            _pageHost.Dock = DockStyle.Fill;
+            _pageHost.Padding = new Padding(12, 10, 12, 10);
+            _pageHost.BackColor = Color.FromArgb(250, 250, 252);
+
+            _pages = new Panel[6];
+            _pages[0] = MakePage(BuildBrightnessPage());
+            _pages[1] = MakePage(BuildPowerPanel());
+            _pages[2] = MakePage(BuildUnleashPanel());
+            _pages[3] = MakePage(BuildStatusPage());
+            _pages[4] = MakePage(BuildLogPanel());
+            _pages[5] = MakePage(BuildSettingsPage());
+            foreach (Panel p in _pages)
             {
-                Dock = DockStyle.Fill,
-                ColumnCount = 1,
-                RowCount = 7,
-                Padding = new Padding(12)
+                p.Visible = false;
+                _pageHost.Controls.Add(p);
+            }
+
+            Controls.Add(_pageHost);
+            Controls.Add(BuildSidebar());
+            ShowPage(0);
+
+            ResumeLayout();
+        }
+
+        static Panel MakePage(Control content)
+        {
+            var page = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
+            content.Dock = DockStyle.Fill;
+            page.Controls.Add(content);
+            return page;
+        }
+
+        Control BuildSidebar()
+        {
+            var side = new Panel { Dock = DockStyle.Left, Width = 168, BackColor = Color.FromArgb(246, 248, 252) };
+
+            var brand = new Label
+            {
+                Text = "亮度控制",
+                Font = new Font(Font.FontFamily, 12F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(28, 40, 58),
+                AutoSize = false
             };
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 156));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 188));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 100));
-            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 176));
+            brand.SetBounds(20, 16, 132, 26);
 
-            root.Controls.Add(BuildTopPanel(), 0, 0);
-            root.Controls.Add(BuildActionPanel(), 0, 1);
-            root.Controls.Add(BuildOptionsPanel(), 0, 2);
-            root.Controls.Add(BuildPowerPanel(), 0, 3);
-            root.Controls.Add(BuildUnleashPanel(), 0, 4);
-            root.Controls.Add(BuildInfoPanel(), 0, 5);
-            root.Controls.Add(BuildLogPanel(), 0, 6);
+            var ver = new Label
+            {
+                Text = "版本 " + Program.Version,
+                ForeColor = Color.Gray,
+                AutoSize = false
+            };
+            ver.SetBounds(20, 42, 132, 18);
 
-            Controls.Add(root);
+            var sep = new Panel { BackColor = Color.FromArgb(226, 232, 240) };
+            sep.SetBounds(16, 68, 136, 1);
+
+            string[,] items = new string[,]
+            {
+                { "\uE706", "亮度" },
+                { "\uE7E8", "电源" },
+                { "\uE945", "一键模式" },
+                { "\uE946", "状态" },
+                { "\uE81C", "日志" },
+                { "\uE713", "设置" }
+            };
+
+            _navs = new NavButton[items.GetLength(0)];
+            for (int i = 0; i < _navs.Length; i++)
+            {
+                var nb = new NavButton { Text = items[i, 1], Glyph = items[i, 0] };
+                nb.SetBounds(8, 78 + i * 50, 152, 44);
+                int idx = i;
+                nb.Click += (s, e) => ShowPage(idx);
+                _navs[i] = nb;
+                side.Controls.Add(nb);
+            }
+
+            _navMode.Text = "当前：常规";
+            _navMode.ForeColor = Color.FromArgb(90, 96, 108);
+            _navMode.AutoSize = false;
+            _navMode.SetBounds(20, 0, 132, 20);
+
+            _navPower.Text = "电源：--";
+            _navPower.ForeColor = Color.FromArgb(120, 126, 138);
+            _navPower.AutoSize = false;
+            _navPower.SetBounds(20, 0, 132, 20);
+
+            side.Controls.Add(brand);
+            side.Controls.Add(ver);
+            side.Controls.Add(sep);
+            side.Controls.Add(_navMode);
+            side.Controls.Add(_navPower);
+
+            side.Resize += (s, e) =>
+            {
+                _navPower.Top = side.ClientSize.Height - 30;
+                _navMode.Top = _navPower.Top - 22;
+            };
+            side.Paint += (s, e) =>
+            {
+                using (var pen = new Pen(Color.FromArgb(230, 235, 242)))
+                    e.Graphics.DrawLine(pen, side.ClientSize.Width - 1, 0, side.ClientSize.Width - 1, side.ClientSize.Height);
+            };
+
+            return side;
+        }
+
+        void ShowPage(int index)
+        {
+            if (_pages == null || index < 0 || index >= _pages.Length) return;
+            for (int i = 0; i < _pages.Length; i++)
+            {
+                _pages[i].Visible = i == index;
+                if (_navs != null && i < _navs.Length)
+                {
+                    _navs[i].Active = i == index;
+                    _navs[i].Invalidate();
+                }
+            }
+            _pageHost.PerformLayout();
+        }
+
+        // 亮度页：亮度控制 + 联动开关
+        Control BuildBrightnessPage()
+        {
+            var page = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
+
+            var opts = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                Height = 44,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                Padding = new Padding(2, 10, 0, 0)
+            };
+
+            _chkBoth.Text = "两块屏一起调";
+            _chkBoth.AutoSize = true;
+            _chkBoth.Margin = new Padding(4, 0, 20, 0);
+            _chkBoth.CheckedChanged += (s, e) =>
+            {
+                _target.Enabled = !_chkBoth.Checked;
+                if (_chkBoth.Checked)
+                {
+                    Flash("已开启联动：滑杆、预设、快捷键会同时作用于内置屏和外接屏。", false);
+                }
+                else
+                {
+                    SyncFromTarget();
+                    _msg.Text = "";
+                }
+            };
+
+            var hint = new Label
+            {
+                Text = "快捷键 Ctrl+Alt+↑ / ↓ 微调 5%",
+                AutoSize = true,
+                ForeColor = Color.Gray,
+                Margin = new Padding(6, 2, 0, 0)
+            };
+
+            opts.Controls.Add(_chkBoth);
+            opts.Controls.Add(hint);
+
+            Control top = BuildTopPanel();
+            top.Dock = DockStyle.Top;
+            top.Height = 190;
+
+            page.Controls.Add(opts);
+            page.Controls.Add(top);
+            return page;
+        }
+
+        // 设置页：开机自启、快捷键与托盘说明
+        Control BuildSettingsPage()
+        {
+            var gb = new GroupBox { Text = "程序设置", Dock = DockStyle.Fill, Padding = new Padding(14) };
+
+            _chkAuto.Text = "开机自启";
+            _chkAuto.AutoSize = false;
+            _chkAuto.SetBounds(18, 32, 140, 24);
+            _chkAuto.Checked = AutoStart.Enabled();
+            _chkAuto.CheckedChanged += (s, e) =>
+            {
+                AutoStart.Set(_chkAuto.Checked);
+                LogStore.Write("CONFIG", "autostart=" + (_chkAuto.Checked ? "on" : "off"));
+                Flash(_chkAuto.Checked ? "已设置开机自启。" : "已取消开机自启。", false);
+            };
+
+            var l1 = new Label
+            {
+                Text = "快捷键：Ctrl + Alt + ↑ / ↓ 微调 5%",
+                AutoSize = false,
+                ForeColor = Color.FromArgb(70, 74, 84)
+            };
+            l1.SetBounds(18, 72, 460, 22);
+
+            var l2 = new Label
+            {
+                Text = "关闭窗口后驻留托盘，双击托盘图标可再次打开。",
+                AutoSize = false,
+                ForeColor = Color.FromArgb(70, 74, 84)
+            };
+            l2.SetBounds(18, 100, 520, 22);
+
+            var l3 = new Label
+            {
+                Text = "「两块屏一起调」开关在「亮度」页；插拔自动锁定在「电源」页。",
+                AutoSize = false,
+                ForeColor = Color.Gray
+            };
+            l3.SetBounds(18, 128, 600, 22);
+
+            var cap = new Label
+            {
+                Text = "系统入口",
+                AutoSize = false,
+                ForeColor = Color.DimGray
+            };
+            cap.SetBounds(18, 170, 80, 20);
+
+            var btnPower = MakeButton("电源选项", 96, (s, e) => StartSafe("control.exe", "powercfg.cpl"));
+            btnPower.Location = new Point(18, 194);
+            var btnDisp = MakeButton("系统显示设置", 116, (s, e) => StartSafe("explorer.exe", "ms-settings:display"));
+            btnDisp.Location = new Point(122, 194);
+
+            gb.Controls.Add(_chkAuto);
+            gb.Controls.Add(l1);
+            gb.Controls.Add(l2);
+            gb.Controls.Add(l3);
+            gb.Controls.Add(cap);
+            gb.Controls.Add(btnPower);
+            gb.Controls.Add(btnDisp);
+            return gb;
+        }
+
+        // 状态页：顶部诊断动作 + 系统状态表
+        Control BuildStatusPage()
+        {
+            var page = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
+
+            var bar = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                Height = 44,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                Padding = new Padding(2, 8, 0, 0)
+            };
+            bar.Controls.Add(MakeButton("刷新全部", 96, (s, e) =>
+            {
+                _retryLeft = 3;
+                ReloadTargets();
+                SyncFromTarget();
+                RefreshStatus();
+                LoadLogs();
+            }));
+            bar.Controls.Add(MakeButton("导出诊断报告", 120, (s, e) => ExportReport()));
+            bar.Controls.Add(MakeButton("关闭 Vari-Bright", 128, (s, e) => RunFix("-Target VariBright -Apply")));
+            bar.Controls.Add(MakeButton("恢复 Vari-Bright", 128, (s, e) => RunFix("-Target VariBright -Restore -Apply")));
+
+            Control info = BuildInfoPanel();
+            page.Controls.Add(info);
+            page.Controls.Add(bar);
+            return page;
         }
 
         Control BuildTopPanel()
@@ -1971,58 +2379,6 @@ namespace BrightnessApp
             return gb;
         }
 
-        Control BuildOptionsPanel()
-        {
-            var flow = new FlowLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                FlowDirection = FlowDirection.LeftToRight,
-                WrapContents = false,
-                Padding = new Padding(2, 6, 2, 0)
-            };
-
-            _chkBoth.Text = "两块屏一起调";
-            _chkBoth.AutoSize = true;
-            _chkBoth.Margin = new Padding(4, 0, 20, 0);
-            _chkBoth.CheckedChanged += (s, e) =>
-            {
-                _target.Enabled = !_chkBoth.Checked;
-                if (_chkBoth.Checked)
-                {
-                    Flash("已开启联动：滑杆、预设、快捷键会同时作用于内置屏和外接屏。", false);
-                }
-                else
-                {
-                    SyncFromTarget();
-                    _msg.Text = "";
-                }
-            };
-
-            _chkAuto.Text = "开机自启";
-            _chkAuto.AutoSize = true;
-            _chkAuto.Margin = new Padding(4, 0, 20, 0);
-            _chkAuto.Checked = AutoStart.Enabled();
-            _chkAuto.CheckedChanged += (s, e) =>
-            {
-                AutoStart.Set(_chkAuto.Checked);
-                LogStore.Write("CONFIG", "autostart=" + (_chkAuto.Checked ? "on" : "off"));
-                Flash(_chkAuto.Checked ? "已设置开机自启。" : "已取消开机自启。", false);
-            };
-
-            var hint = new Label
-            {
-                Text = "快捷键 Ctrl+Alt+↑ / ↓ 微调 5%　｜　关闭窗口后驻留托盘，双击图标可再次打开",
-                AutoSize = true,
-                ForeColor = Color.Gray,
-                Margin = new Padding(6, 2, 0, 0)
-            };
-
-            flow.Controls.Add(_chkBoth);
-            flow.Controls.Add(_chkAuto);
-            flow.Controls.Add(hint);
-            return flow;
-        }
-
         // ── 电源与插电设置 ──────────────────────────────────
         static readonly int[] TimeValues = new int[] { 60, 120, 180, 240, 300, 600, 900, 1200, 1800, 2700, 3600, 5400, 7200, 10800, 0 };
         static readonly int[] CpuValues = new int[] { 100, 95, 90, 85, 80, 75, 70, 60, 50, 30 };
@@ -2097,11 +2453,12 @@ namespace BrightnessApp
 
             var tip = new Label
             {
-                Text = "两个开关互斥，关闭时会还原到打开前的状态。释放全部性能：处理器 100%、散热主动、关闭插电节电。超级节能：处理器限 30%、散热被动、关闭睿频、插电和电池都锁节电模式。",
+                Text = "两个开关互斥，开一个会自动关掉另一个；关闭时还原到打开前的状态。\r\n"
+                     + "释放全部性能：处理器 100%、散热主动、关闭插电节电。\r\n"
+                     + "超级节能：处理器限 30%、散热被动、关闭睿频，插电和电池都锁最省电。",
                 ForeColor = Color.Gray,
                 AutoSize = false,
-                AutoEllipsis = true,
-                TextAlign = ContentAlignment.MiddleLeft
+                TextAlign = ContentAlignment.TopLeft
             };
             panel.Controls.Add(tip);
 
@@ -2109,9 +2466,9 @@ namespace BrightnessApp
             {
                 int gap = 12;
                 int w = Math.Max(240, (panel.ClientSize.Width - gap) / 2);
-                _tgPerf.SetBounds(0, 0, w, 58);
-                _tgSaver.SetBounds(w + gap, 0, w, 58);
-                tip.SetBounds(0, 62, panel.ClientSize.Width, 20);
+                _tgPerf.SetBounds(0, 0, w, 72);
+                _tgSaver.SetBounds(w + gap, 0, w, 72);
+                tip.SetBounds(2, 86, panel.ClientSize.Width - 4, 66);
             };
 
             return panel;
@@ -2345,6 +2702,7 @@ namespace BrightnessApp
 
             _tgPerf.SetCheckedSilent(perfOn);
             _tgSaver.SetCheckedSilent(saverOn);
+            _navMode.Text = "当前：" + (saverOn ? "超级节能" : (perfOn ? "释放性能" : "常规"));
         }
 
         Control BuildPowerPanel()
@@ -2352,12 +2710,12 @@ namespace BrightnessApp
             var gb = new GroupBox { Text = "电源与插电设置（修改前自动备份，可一键撤销）", Dock = DockStyle.Fill, Font = Font };
 
             AddCaption(gb, "电源计划", 12, 28);
-            _plan.SetBounds(74, 24, 190, 24);
+            _plan.SetBounds(80, 24, 180, 24);
             _plan.DropDownStyle = ComboBoxStyle.DropDownList;
             gb.Controls.Add(_plan);
 
-            AddCaption(gb, "电源模式", 274, 28);
-            _overlay.SetBounds(336, 24, 150, 24);
+            AddCaption(gb, "电源模式", 276, 28);
+            _overlay.SetBounds(344, 24, 140, 24);
             _overlay.DropDownStyle = ComboBoxStyle.DropDownList;
             _overlay.Items.AddRange(new object[] { "节电模式", "平衡（默认）", "更好的性能" });
             _overlay.SelectedIndex = 0;
@@ -2365,79 +2723,84 @@ namespace BrightnessApp
 
             _btnApplyPower.Text = "应用并备份";
             _btnApplyPower.Font = new Font(Font.FontFamily, 9F, FontStyle.Bold);
-            _btnApplyPower.SetBounds(498, 22, 104, 30);
+            _btnApplyPower.SetBounds(496, 22, 104, 30);
             _btnApplyPower.Click += (s, e) => ApplyPowerSettings();
             gb.Controls.Add(_btnApplyPower);
 
             _btnUndoPower.Text = "撤销上次修改";
-            _btnUndoPower.SetBounds(610, 22, 110, 30);
+            _btnUndoPower.SetBounds(608, 22, 110, 30);
             _btnUndoPower.Click += (s, e) => UndoPower();
             gb.Controls.Add(_btnUndoPower);
 
+            var btnPowerCpl = new Button { Text = "电源选项", FlatStyle = FlatStyle.System };
+            btnPowerCpl.SetBounds(726, 22, 96, 30);
+            btnPowerCpl.Click += (s, e) => StartSafe("control.exe", "powercfg.cpl");
+            gb.Controls.Add(btnPowerCpl);
+
             _btnElevate.Text = "以管理员身份重启";
-            _btnElevate.SetBounds(728, 22, 128, 30);
+            _btnElevate.SetBounds(12, 188, 128, 28);
             _btnElevate.Visible = false;   // 只有确实写入失败时才提示提权
             _btnElevate.Click += (s, e) => RelaunchAsAdmin();
             gb.Controls.Add(_btnElevate);
 
-            _lblPowerState.SetBounds(862, 28, 170, 20);
             _lblPowerState.TextAlign = ContentAlignment.MiddleRight;
             _lblPowerState.ForeColor = Color.FromArgb(90, 90, 100);
             _lblPowerState.AutoEllipsis = true;
             gb.Controls.Add(_lblPowerState);
 
-            // 第二行：插电 / 电池 的超时与处理器上限
+            // 第二行：插电
             AddCaption(gb, "插电时", 12, 64);
-            AddCaption(gb, "关屏", 72, 64);
-            InitTime(gb, _acOff, 114, 60);
-            AddCaption(gb, "睡眠", 200, 64);
-            InitTime(gb, _acSleep, 242, 60);
-            AddCaption(gb, "最大处理器", 328, 64);
-            _acMaxCpu.SetBounds(420, 60, 66, 24);
+            AddCaption(gb, "关屏", 68, 64);
+            InitTime(gb, _acOff, 108, 60);
+            AddCaption(gb, "睡眠", 194, 64);
+            InitTime(gb, _acSleep, 234, 60);
+            AddCaption(gb, "最大处理器", 322, 64);
+            _acMaxCpu.SetBounds(416, 60, 66, 24);
             _acMaxCpu.DropDownStyle = ComboBoxStyle.DropDownList;
             for (int i = 0; i < CpuValues.Length; i++) _acMaxCpu.Items.Add(CpuValues[i] + "%");
             _acMaxCpu.SelectedIndex = 0;
             gb.Controls.Add(_acMaxCpu);
 
-            AddCaption(gb, "电池时", 504, 64);
-            AddCaption(gb, "关屏", 564, 64);
-            InitTime(gb, _dcOff, 606, 60);
-            AddCaption(gb, "睡眠", 692, 64);
-            InitTime(gb, _dcSleep, 734, 60);
+            // 第三行：电池
+            AddCaption(gb, "电池时", 12, 96);
+            AddCaption(gb, "关屏", 68, 96);
+            InitTime(gb, _dcOff, 108, 92);
+            AddCaption(gb, "睡眠", 194, 96);
+            InitTime(gb, _dcSleep, 234, 92);
 
             _btnSyncAc.Text = "复制到插电";
-            _btnSyncAc.SetBounds(824, 58, 96, 28);
+            _btnSyncAc.SetBounds(680, 90, 96, 28);
             _btnSyncAc.Click += (s, e) => SyncPower(true);
             gb.Controls.Add(_btnSyncAc);
 
             _btnSyncDc.Text = "复制到电池";
-            _btnSyncDc.SetBounds(928, 58, 96, 28);
+            _btnSyncDc.SetBounds(680, 58, 96, 28);
             _btnSyncDc.Click += (s, e) => SyncPower(false);
             gb.Controls.Add(_btnSyncDc);
 
-            // 第三行：一键预设 + 插拔电自动亮度
+            // 第四行：一键预设 + 插拔电自动亮度
             var p1 = new Button { Text = "省电模式" };
-            p1.SetBounds(12, 94, 88, 28);
+            p1.SetBounds(12, 122, 88, 28);
             p1.Click += (s, e) => ApplyPreset(0);
             gb.Controls.Add(p1);
 
             var p2 = new Button { Text = "均衡模式" };
-            p2.SetBounds(104, 94, 88, 28);
+            p2.SetBounds(104, 122, 88, 28);
             p2.Click += (s, e) => ApplyPreset(1);
             gb.Controls.Add(p2);
 
             var p3 = new Button { Text = "性能模式" };
-            p3.SetBounds(196, 94, 88, 28);
+            p3.SetBounds(196, 122, 88, 28);
             p3.Click += (s, e) => ApplyPreset(2);
             gb.Controls.Add(p3);
 
             _btnRestoreAllPower.Text = "全部还原";
-            _btnRestoreAllPower.SetBounds(676, 94, 96, 28);
+            _btnRestoreAllPower.SetBounds(680, 122, 96, 28);
             _btnRestoreAllPower.Click += (s, e) => RestoreAll();
             gb.Controls.Add(_btnRestoreAllPower);
 
             _chkAutoBright.Text = "插拔电源自动设亮度";
-            _chkAutoBright.SetBounds(298, 98, 150, 22);
+            _chkAutoBright.SetBounds(298, 126, 150, 22);
             _chkAutoBright.CheckedChanged += (s, e) =>
             {
                 if (_powerSyncing) return;
@@ -2449,29 +2812,29 @@ namespace BrightnessApp
             };
             gb.Controls.Add(_chkAutoBright);
 
-            AddCaption(gb, "插电", 454, 100);
-            InitLevel(gb, _acBrightLevel, 496, 96);
+            AddCaption(gb, "插电", 454, 128);
+            InitLevel(gb, _acBrightLevel, 496, 122);
             _acBrightLevel.SelectedIndexChanged += (s, e) =>
             {
                 if (_powerSyncing) return;
                 UiFile.Set("acBright", LevelValue(_acBrightLevel).ToString());
             };
-            AddCaption(gb, "电池", 558, 100);
-            InitLevel(gb, _dcBrightLevel, 600, 96);
+            AddCaption(gb, "电池", 558, 128);
+            InitLevel(gb, _dcBrightLevel, 600, 122);
             _dcBrightLevel.SelectedIndexChanged += (s, e) =>
             {
                 if (_powerSyncing) return;
                 UiFile.Set("dcBright", LevelValue(_dcBrightLevel).ToString());
             };
 
-            // 第四行：插拔自动锁定模式
+            // 第五行：插拔自动锁定模式
             _chkLock.Text = "插拔自动锁定";
-            _chkLock.SetBounds(12, 124, 150, 22);
+            _chkLock.SetBounds(12, 162, 150, 22);
             _chkLock.CheckedChanged += (s, e) => ToggleLock(_chkLock.Checked);
             gb.Controls.Add(_chkLock);
 
-            AddCaption(gb, "插电", 168, 128);
-            _lockAc.SetBounds(210, 124, 110, 24);
+            AddCaption(gb, "插电", 168, 166);
+            _lockAc.SetBounds(210, 160, 110, 24);
             _lockAc.DropDownStyle = ComboBoxStyle.DropDownList;
             _lockAc.Items.AddRange(new object[] { "节电模式", "平衡（默认）", "更好的性能" });
             _lockAc.SelectedIndex = 2;
@@ -2484,8 +2847,8 @@ namespace BrightnessApp
             };
             gb.Controls.Add(_lockAc);
 
-            AddCaption(gb, "电池", 330, 128);
-            _lockDc.SetBounds(372, 124, 110, 24);
+            AddCaption(gb, "电池", 330, 166);
+            _lockDc.SetBounds(372, 160, 110, 24);
             _lockDc.DropDownStyle = ComboBoxStyle.DropDownList;
             _lockDc.Items.AddRange(new object[] { "节电模式", "平衡（默认）", "更好的性能" });
             _lockDc.SelectedIndex = 0;
@@ -2499,17 +2862,17 @@ namespace BrightnessApp
             gb.Controls.Add(_lockDc);
 
             _btnLockRestore.Text = "关闭并还原";
-            _btnLockRestore.SetBounds(492, 122, 120, 28);
+            _btnLockRestore.SetBounds(492, 158, 120, 28);
             _btnLockRestore.Click += (s, e) => RestoreLockBackup();
             gb.Controls.Add(_btnLockRestore);
 
             _btnLockApply.Text = "立即应用";
-            _btnLockApply.SetBounds(620, 122, 100, 28);
+            _btnLockApply.SetBounds(620, 158, 100, 28);
             _btnLockApply.Click += (s, e) => ApplyLockNow();
             gb.Controls.Add(_btnLockApply);
 
             _chkSaver.Text = "节电模式常开";
-            _chkSaver.SetBounds(730, 124, 120, 22);
+            _chkSaver.SetBounds(730, 162, 120, 22);
             _chkSaver.CheckedChanged += (s, e) =>
             {
                 if (_powerSyncing) return;
@@ -2517,54 +2880,46 @@ namespace BrightnessApp
             };
             gb.Controls.Add(_chkSaver);
 
-            _lblPowerMsg.SetBounds(12, 156, 420, 20);
+            _lblPowerMsg.SetBounds(12, 192, 520, 20);
             _lblPowerMsg.AutoEllipsis = true;
             gb.Controls.Add(_lblPowerMsg);
 
             var hint = new Label
             {
-                Text = "模式只作用于当前电源来源；备份见两个 backup txt",
+                Text = "模式只作用于当前电源来源；修改前会自动备份，可用「撤销上次修改」还原。",
                 ForeColor = Color.Gray,
                 AutoSize = false,
                 AutoEllipsis = true,
                 TextAlign = ContentAlignment.MiddleLeft
             };
-            hint.SetBounds(440, 156, 610, 20);
+            hint.SetBounds(12, 216, 600, 20);
             gb.Controls.Add(hint);
 
-            // 窗口变宽时把富余宽度均分到各栏之间，避免右侧按钮被挤住或裁掉
+            // 窗口变宽时把右侧按钮贴右排列，避免被挤住或裁掉
             gb.Resize += (s, e) =>
             {
                 LayoutPowerPanel(gb);
-                hint.SetBounds(440, 156, Math.Max(120, gb.ClientSize.Width - 12 - 440), 20);
+                hint.Width = Math.Max(120, gb.ClientSize.Width - 24 - (_btnElevate.Visible ? 136 : 0));
             };
             LayoutPowerPanel(gb);
 
             return gb;
         }
 
-        // 电源设置区自适应：右缘按钮贴右排列，中间的间距按窗口宽度均匀撑开
+        // 电源设置区自适应：右缘按钮贴右排列
         void LayoutPowerPanel(GroupBox gb)
         {
             int w = gb.ClientSize.Width;
             if (w < 400) return;
             int right = w - 12;
 
-            // 第一行：状态文字贴右；两个按钮按富余宽度均分右移
-            int extra = right - 1032;
-            if (extra < 0) extra = 0;
-            int step = extra / 3;
-            _btnApplyPower.Left = 498 + step;
-            _btnUndoPower.Left = 610 + step * 2;
-            _btnElevate.Left = _btnUndoPower.Right + 8;
-            _lblPowerState.SetBounds(right - 170, 28, 170, 20);
-
-            // 第二行：两个复制按钮贴右
             _btnSyncDc.Left = right - _btnSyncDc.Width;
-            _btnSyncAc.Left = _btnSyncDc.Left - 8 - _btnSyncAc.Width;
-
-            // 第三行：全部还原与上方“复制到电池”右缘对齐
+            _btnSyncAc.Left = right - _btnSyncAc.Width;
             _btnRestoreAllPower.Left = right - _btnRestoreAllPower.Width;
+
+            _lblPowerMsg.SetBounds(12, 192, Math.Max(160, right - 24 - 210), 20);
+            _lblPowerState.SetBounds(right - 200, 192, 200, 20);
+            _btnElevate.SetBounds(right - 128, 214, 128, 28);
         }
 
         static void AddCaption(Control parent, string text, int x, int y)
@@ -3126,6 +3481,7 @@ namespace BrightnessApp
                 int st = PowerCtl.PowerLineState();
                 if (st < 0) return; // 切换瞬间读不到，下一轮再说
                 bool online = st == 1;
+                _navPower.Text = online ? "电源：插电" : "电源：电池";
                 if (!_havePowerSource)
                 {
                     _havePowerSource = true;
@@ -3296,34 +3652,6 @@ namespace BrightnessApp
             }
         }
 
-        Control BuildActionPanel()
-        {
-            var flow = new FlowLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                FlowDirection = FlowDirection.LeftToRight,
-                WrapContents = false,
-                Padding = new Padding(2, 4, 0, 0)
-            };
-
-            flow.Controls.Add(MakeButton("刷新全部", 96, (s, e) =>
-            {
-                _retryLeft = 3;
-                ReloadTargets();
-                SyncFromTarget();
-                RefreshStatus();
-                LoadLogs();
-            }));
-            flow.Controls.Add(MakeButton("导出诊断报告", 120, (s, e) => ExportReport()));
-            flow.Controls.Add(MakeButton("打开日志文件夹", 124, (s, e) => OpenFolder()));
-            flow.Controls.Add(MakeButton("关闭 Vari-Bright", 128, (s, e) => RunFix("-Target VariBright -Apply")));
-            flow.Controls.Add(MakeButton("恢复 Vari-Bright", 128, (s, e) => RunFix("-Target VariBright -Restore -Apply")));
-            flow.Controls.Add(MakeButton("电源选项", 96, (s, e) => StartSafe("control.exe", "powercfg.cpl")));
-            flow.Controls.Add(MakeButton("系统显示设置", 116, (s, e) => StartSafe("explorer.exe", "ms-settings:display")));
-
-            return flow;
-        }
-
         Button MakeButton(string text, int width, EventHandler onClick)
         {
             var b = new Button
@@ -3357,6 +3685,7 @@ namespace BrightnessApp
 
             string[] captions = new string[]
             {
+                "CPU 频率", "CPU 占用",
                 "屏幕型号", "显卡",
                 "制造商 / 日期", "驱动版本",
                 "亮度档位", "显示器数量",
@@ -3476,6 +3805,13 @@ namespace BrightnessApp
             bottom.Controls.Add(_logFilter);
             bottom.Controls.Add(_lblLogPath);
 
+            // 窗口宽度变化时，「复制状态」贴右，日志路径自动伸缩
+            bottom.Resize += (s, e) =>
+            {
+                btnCopyState.Left = Math.Max(0, bottom.ClientSize.Width - btnCopyState.Width);
+                _lblLogPath.Width = Math.Max(120, btnCopyState.Left - 8 - _lblLogPath.Left);
+            };
+
             _list.Dock = DockStyle.Fill;
             _list.View = View.Details;
             _list.FullRowSelect = true;
@@ -3487,6 +3823,12 @@ namespace BrightnessApp
 
             gb.Controls.Add(_list);
             gb.Controls.Add(bottom);
+
+            gb.Resize += (s, e) =>
+            {
+                if (_list.Columns.Count > 2)
+                    _list.Columns[2].Width = Math.Max(300, _list.ClientSize.Width - 240);
+            };
             return gb;
         }
 
@@ -3936,6 +4278,7 @@ namespace BrightnessApp
                 Set("虚拟显示驱动", SysInfo.VirtualAdapterCount() + " 个", SysInfo.VirtualAdapterCount() > 0);
                 Set("电池", SysInfo.BatteryText(), false);
                 Set("剩余时间", SysInfo.BatteryRemaining(), false);
+                UpdateCpuMeter();
                 Set("系统版本", SysInfo.OsVersion(), false);
 
                 // WMI 客户端偶尔会短暂失效，导致若干字段取不到值：延迟再取一次
@@ -3947,6 +4290,13 @@ namespace BrightnessApp
                 }
             }
             catch { }
+        }
+
+        // CPU 频率/占用：每 2 秒刷新，可直观看到性能档、节能档是否生效
+        void UpdateCpuMeter()
+        {
+            Set("CPU 频率", CpuMeter.FreqText(), false);
+            Set("CPU 占用", CpuMeter.LoadText(), false);
         }
 
         bool HasUnknown()
