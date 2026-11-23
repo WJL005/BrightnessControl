@@ -1,0 +1,58 @@
+Brightness Control（Windows 屏幕亮度控制工具）· 快速上手
+========================================================
+
+【直接运行】
+  BrightnessControl.exe  —— 双击打开图形界面（托盘程序）
+  BrightnessTool.exe     —— 命令行版
+
+
+【图形界面能做什么】
+  · 亮度滑条 / +5 / -5 微调，改完立刻回读实际亮度复核
+  · 控制目标：内置屏(WMI) / 外接屏(DDC) / 两块屏一起调
+  · 关闭窗口后驻留托盘，双击图标唤回；Ctrl+Alt+↑/↓ 微调 5%
+  · 开机自启开关
+  · 电源方案：省电/均衡/性能模式、插拔电源自动设亮度（改前自动备份、可撤销）
+  · 一键关闭/恢复 AMD Vari-Bright
+  · 导出诊断报告、查看日志
+  · 改系统设置时点「以管理员身份重启」
+
+
+【命令行】
+  BrightnessTool.exe show          显示当前亮度
+  BrightnessTool.exe set 80        设为 80%
+  BrightnessTool.exe monitor 2     每 2 秒监控一次亮度变化
+
+
+【一键快捷脚本】
+  双击 亮度-50.ps1 / 亮度-60.ps1 / ... / 亮度-100.ps1 设到对应亮度
+
+
+【亮度体检：找出谁在偷偷改亮度】
+  powershell -ExecutionPolicy Bypass -File .\Diagnose-Brightness.ps1
+  只读诊断，逐层检查 WMI/DDC/电源系数/Vari-Bright/虚拟显示器等。
+  加 -Test 会临时设 100% 再还原，用来判断亮度是否被二次压低。
+
+  确认来源后（默认演练，加 -Apply 且需管理员才真正写入）：
+  powershell -ExecutionPolicy Bypass -File .\Fix-Brightness-Source.ps1 -Apply
+
+
+【从源码编译】
+  双击 build.bat
+  生成 BrightnessControl.exe（GUI）和 BrightnessTool.exe（CLI）
+  需要 .NET Framework 4.x 的 csc.exe（Win10/11 一般自带）
+
+
+【日志与隐私】
+  运行日志写在 logs\ 目录，诊断报告为 diagnose-YYYYMMDD.log。
+  这些文件含本机用户名/主机名，已加入 .gitignore，不会进版本库。
+  公开分享或提 issue 前请先脱敏（examples\ 里有脱敏样例）。
+
+
+【目录】
+  README.md              完整说明
+  SECURITY.md            安全与隐私
+  CONTRIBUTING.md        贡献指南
+  CHANGELOG.md           版本记录
+  LICENSE                MIT 许可
+  examples\              脱敏日志示例
+  src\                   C# 源码

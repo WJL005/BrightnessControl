@@ -1,0 +1,4 @@
+# 亮度体检诊断日志示例（已脱敏）
+
+YYYY-MM-DD HH:MM:SS | DIAG | brightness=80 | es=On | bsCoeff=100 | variBright=2 | adaptive=off | findings=1 | AMD Vari-Bright（内容自适应背光）处于启用状态，等级 2。
+YYYY-MM-DD HH:MM:SS | DIAG | brightness=98 | es=On | bsCoeff=100 | variBright=2 | adaptive=off | findings=1 | AMD Vari-Bright（内容自适应背光）处于启用状态，等级 2。
