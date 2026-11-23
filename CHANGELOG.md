@@ -2,6 +2,28 @@
 
 本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.3.3] - 2026-11-23
+
+### 改进
+- 程序更名：「亮度控制」→「屏亮管家」，窗口标题、侧边栏品牌、托盘提示、诊断报告统一使用新名称。
+- 新增应用图标：蓝底白色太阳（16/20/24/32/40/48/64/128/256 多尺寸），资源管理器、任务栏与托盘均可清晰识别。
+- 图标同时写入 exe 图标资源与内嵌清单资源，托盘与窗口图标不再依赖系统默认图标。
+
+## [1.3.2] - 2026-11-23
+
+### 新增
+- 名词提示：把鼠标停在按钮、下拉框和状态项目上，会弹出技术名词的详细解释。
+  覆盖 Vari-Bright、电源计划/电源模式、最大处理器状态、散热主动/被动、睿频、节电模式、DDC/CI、WMI 等。
+- 「设置」页新增「名词提示（鼠标悬停看解释）」开关，默认开启，选择会保存在 ui-settings.txt。
+
+## [1.3.1] - 2026-11-23
+
+程序内部版本号与发布号统一为 1.3.1。
+
+### 改进
+- 隐私：窗口标题、操作日志、诊断报告不再显示计算机名与用户名。
+- 日志页中的文件路径把用户目录显示为 `%USERPROFILE%`，避免暴露 Windows 用户名。
+
 ## [1.3.0] - 2026-11-23
 
 程序内部版本号与发布号统一为 1.3.0。
@@ -73,6 +95,9 @@
 - `build.bat` 一键编译 GUI 与 CLI 两个版本。
 - 脱敏处理：移除本机用户名、机器名、显示器型号与私有路径，提供脱敏日志示例。
 
+[1.3.3]: https://github.com/WJL005/BrightnessControl/releases/tag/v1.3.3
+[1.3.2]: https://github.com/WJL005/BrightnessControl/releases/tag/v1.3.2
+[1.3.1]: https://github.com/WJL005/BrightnessControl/releases/tag/v1.3.1
 [1.3.0]: https://github.com/WJL005/BrightnessControl/releases/tag/v1.3.0
 [1.1.9]: https://github.com/WJL005/BrightnessControl/releases/tag/v1.1.9
 [1.1.6]: https://github.com/WJL005/BrightnessControl/releases/tag/v1.1.6

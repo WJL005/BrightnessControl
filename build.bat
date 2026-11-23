@@ -8,7 +8,7 @@ echo   Brightness Control - Build
 echo ============================================
 
 rem GUI edition (tray + panel + power scheme)
-"%CSC%" /nologo /target:winexe /optimize+ /r:System.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.Management.dll /out:BrightnessControl.exe src\BrightnessGui.cs
+"%CSC%" /nologo /target:winexe /optimize+ /codepage:65001 /win32icon:app.ico /resource:app.ico,BrightnessApp.app.ico /r:System.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.Management.dll /out:BrightnessControl.exe src\BrightnessGui.cs
 if errorlevel 1 goto fail
 
 rem CLI edition (set / show / monitor subcommands)

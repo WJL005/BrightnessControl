@@ -15,7 +15,8 @@ namespace BrightnessApp
 {
     static class Program
     {
-        public const string Version = "1.3.0";
+        public const string Version = "1.3.3";
+        public const string AppName = "屏亮管家";
 
         [STAThread]
         static void Main()
@@ -566,14 +567,27 @@ namespace BrightnessApp
             get { return Path.Combine(Dir, "brightness-" + DateTime.Now.ToString("yyyyMMdd") + ".log"); }
         }
 
+        // 界面展示用：用户目录替换成 %USERPROFILE%，避免暴露 Windows 用户名
+        public static string DisplayPath(string path)
+        {
+            try
+            {
+                string home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                if (!string.IsNullOrEmpty(home) && path != null
+                    && path.StartsWith(home, StringComparison.OrdinalIgnoreCase))
+                    return "%USERPROFILE%" + path.Substring(home.Length);
+            }
+            catch { }
+            return path;
+        }
+
         public static void Write(string action, string detail)
         {
             try
             {
                 if (!Directory.Exists(Dir)) Directory.CreateDirectory(Dir);
-                string line = string.Format("{0} | {1,-6} | {2} | user={3} | host={4}",
-                    DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), action, detail,
-                    Environment.UserName, Environment.MachineName);
+                string line = string.Format("{0} | {1,-6} | {2}",
+                    DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), action, detail);
                 File.AppendAllText(TodayFile, line + Environment.NewLine, new UTF8Encoding(false));
             }
             catch { }
@@ -1813,6 +1827,10 @@ namespace BrightnessApp
         readonly ListView _list = new ListView();
         readonly Label _lblLogPath = new Label();
 
+        // 名词提示（鼠标悬停显示解释）
+        readonly ToolTip _tip = new ToolTip();
+        bool _tipsOn = true;
+
         // 左侧导航与分页
         readonly Panel _pageHost = new Panel();
         readonly Label _navMode = new Label();
@@ -1838,13 +1856,20 @@ namespace BrightnessApp
 
         public MainForm()
         {
-            Text = "亮度控制 " + Program.Version + " · " + Environment.MachineName + " · " + Environment.UserName;
+            Text = Program.AppName + " " + Program.Version;
             StartPosition = FormStartPosition.Manual;
             ClientSize = new Size(1080, 740);
             MinimumSize = new Size(1090, 660);
             Font = PickFont();
             BackColor = Color.FromArgb(250, 250, 252);
             Icon = MakeIcon();
+
+            _tipsOn = UiFile.Get("tips", "1") != "0";
+            _tip.ShowAlways = true;
+            _tip.InitialDelay = 350;
+            _tip.ReshowDelay = 100;
+            _tip.AutoPopDelay = 30000;
+            _tip.Active = _tipsOn;
 
             BuildLayout();
             BuildTray();
@@ -2038,7 +2063,7 @@ namespace BrightnessApp
 
             var brand = new Label
             {
-                Text = "亮度控制",
+                Text = Program.AppName,
                 Font = new Font(Font.FontFamily, 12F, FontStyle.Bold),
                 ForeColor = Color.FromArgb(28, 40, 58),
                 AutoSize = false
@@ -2164,6 +2189,9 @@ namespace BrightnessApp
             opts.Controls.Add(_chkBoth);
             opts.Controls.Add(hint);
 
+            Tip(_chkBoth, "勾选后，滑杆、预设按钮、快捷键会同时调整内置屏和外接屏。\r\n取消勾选时只调整「控制目标」里选中的那一块屏。");
+            Tip(hint, "全局快捷键：按住 Ctrl+Alt 再按 ↑ / ↓，可把亮度提高/降低 5%，不用先打开窗口。");
+
             Control top = BuildTopPanel();
             top.Dock = DockStyle.Top;
             top.Height = 190;
@@ -2188,6 +2216,22 @@ namespace BrightnessApp
                 LogStore.Write("CONFIG", "autostart=" + (_chkAuto.Checked ? "on" : "off"));
                 Flash(_chkAuto.Checked ? "已设置开机自启。" : "已取消开机自启。", false);
             };
+
+            var chkTips = new CheckBox
+            {
+                Text = "名词提示（鼠标悬停看解释）",
+                AutoSize = false
+            };
+            chkTips.SetBounds(250, 32, 250, 24);
+            chkTips.Checked = _tipsOn;
+            chkTips.CheckedChanged += (s, e) =>
+            {
+                _tipsOn = chkTips.Checked;
+                _tip.Active = _tipsOn;
+                UiFile.Set("tips", _tipsOn ? "1" : "0");
+                Flash(_tipsOn ? "已开启名词提示：把鼠标停在任何设置项上即可看解释。" : "已关闭名词提示。", false);
+            };
+            Tip(chkTips, "开启后，把鼠标停在按钮、下拉框、状态项目上约 0.3 秒，就会弹出技术名词的详细解释。\r\n关闭后所有提示都不再弹出。");
 
             var l1 = new Label
             {
@@ -2226,7 +2270,14 @@ namespace BrightnessApp
             var btnDisp = MakeButton("系统显示设置", 116, (s, e) => StartSafe("explorer.exe", "ms-settings:display"));
             btnDisp.Location = new Point(122, 194);
 
+            Tip(_chkAuto, "开机时自动启动本程序并驻留托盘，方便用快捷键调亮度。");
+            Tip(btnPower, "打开 Windows 自带的「电源选项」控制面板。");
+            Tip(btnDisp, "打开 Windows 的「显示设置」，可调整分辨率、缩放、多显示器排列等。");
+            Tip(l1, "全局快捷键：按住 Ctrl+Alt 再按 ↑ / ↓，亮度提高/降低 5%。");
+            Tip(l2, "点窗口右上角关闭时程序不退出，而是缩到托盘继续运行；双击托盘图标可重新打开。");
+
             gb.Controls.Add(_chkAuto);
+            gb.Controls.Add(chkTips);
             gb.Controls.Add(l1);
             gb.Controls.Add(l2);
             gb.Controls.Add(l3);
@@ -2249,17 +2300,27 @@ namespace BrightnessApp
                 WrapContents = false,
                 Padding = new Padding(2, 8, 0, 0)
             };
-            bar.Controls.Add(MakeButton("刷新全部", 96, (s, e) =>
+            var bRefresh = MakeButton("刷新全部", 96, (s, e) =>
             {
                 _retryLeft = 3;
                 ReloadTargets();
                 SyncFromTarget();
                 RefreshStatus();
                 LoadLogs();
-            }));
-            bar.Controls.Add(MakeButton("导出诊断报告", 120, (s, e) => ExportReport()));
-            bar.Controls.Add(MakeButton("关闭 Vari-Bright", 128, (s, e) => RunFix("-Target VariBright -Apply")));
-            bar.Controls.Add(MakeButton("恢复 Vari-Bright", 128, (s, e) => RunFix("-Target VariBright -Restore -Apply")));
+            });
+            var bReport = MakeButton("导出诊断报告", 120, (s, e) => ExportReport());
+            var bVbOff = MakeButton("关闭 Vari-Bright", 128, (s, e) => RunFix("-Target VariBright -Apply"));
+            var bVbOn = MakeButton("恢复 Vari-Bright", 128, (s, e) => RunFix("-Target VariBright -Restore -Apply"));
+
+            Tip(bRefresh, "重新读取屏幕、亮度、电源方案、CPU 频率/占用等信息，并刷新日志列表。");
+            Tip(bReport, "把当前系统状态和最近操作记录导出成 txt 并自动打开，便于排查问题。\r\n报告里不含计算机名和用户名。");
+            Tip(bVbOff, "Vari-Bright 是 AMD 显卡的省电显示技术：在电池或普通画面下自动降低背光电流、压低对比度来省电，副作用是画面偏灰、偏暗、色彩变淡。\r\n\r\n「关闭 Vari-Bright」会把它的等级设为 0，不再自动压暗画面；画面会更亮更准，但耗电略增。\r\n\r\n修改需要管理员权限，程序会先备份原值，可用「恢复 Vari-Bright」还原。");
+            Tip(bVbOn, "把 Vari-Bright 恢复到修改前的等级（通常是出厂默认的开启状态）。\r\n\r\n开启后系统会继续按功耗/画面内容自动压暗背光，以换取更长的电池续航。");
+
+            bar.Controls.Add(bRefresh);
+            bar.Controls.Add(bReport);
+            bar.Controls.Add(bVbOff);
+            bar.Controls.Add(bVbOn);
 
             Control info = BuildInfoPanel();
             page.Controls.Add(info);
@@ -2269,7 +2330,7 @@ namespace BrightnessApp
 
         Control BuildTopPanel()
         {
-            var gb = new GroupBox { Text = "亮度控制", Dock = DockStyle.Fill, Padding = new Padding(10) };
+            var gb = new GroupBox { Text = "屏幕亮度", Dock = DockStyle.Fill, Padding = new Padding(10) };
 
             _lblBig.Text = "--%";
             _lblBig.Font = new Font(Font.FontFamily, 30F, FontStyle.Bold);
@@ -2363,8 +2424,18 @@ namespace BrightnessApp
                 };
                 int level = v;
                 b.Click += (s, e) => { _debounce.Stop(); ApplyBrightness(level); };
+                Tip(b, "把当前控制目标的亮度直接设为 " + v + "%。");
                 presetFlow.Controls.Add(b);
             }
+
+            Tip(_lblBig, "当前控制目标的亮度百分比。");
+            Tip(cap, "当前控制目标的亮度百分比。内置屏走系统 WMI 接口，外接屏走 DDC/CI。");
+            Tip(_track, "拖动滑杆设置亮度，松手约 0.4 秒后自动应用；也可以拖动后点「应用」。");
+            Tip(btnMinus, "在当前亮度基础上减 5%。");
+            Tip(btnPlus, "在当前亮度基础上加 5%。");
+            Tip(_btnApply, "立即把滑杆上的亮度写入当前控制目标。");
+            Tip(capTarget, "选择要调节哪一块屏：内置屏用 WMI 调背光；外接屏用 DDC/CI（显示器需支持亮度控制）。");
+            Tip(_target, "内置屏：通过 Windows 的 WMI 亮度接口调节背光。\r\n外接屏：通过 DDC/CI 指令经显卡接口调节，需要显示器支持，部分显示器只能读不能写。");
 
             gb.Controls.Add(_lblBig);
             gb.Controls.Add(cap);
@@ -2461,6 +2532,10 @@ namespace BrightnessApp
                 TextAlign = ContentAlignment.TopLeft
             };
             panel.Controls.Add(tip);
+
+            Tip(_tgPerf, "释放全部性能（会先备份当前设置，关闭开关即还原）：\r\n• 最小/最大处理器状态都设为 100%，不降频\r\n• 散热方式设为「主动」：风扇更积极\r\n• 睿频策略恢复为允许加速\r\n• 关闭插电时的节电模式限制\r\n适合插电做重活；更耗电、更热、风扇更响。");
+            Tip(_tgSaver, "超级节能（会先备份当前设置，关闭开关即还原）：\r\n• 最大处理器状态限制为 30%，最小 5%\r\n• 散热方式设为「被动」：尽量不加速风扇，先降频\r\n• 关闭睿频（Turbo Boost），不让 CPU 临时超频\r\n• 插电和电池都锁定最省电的电源模式\r\n适合长时间离电使用，性能会明显下降。");
+            Tip(tip, "散热主动 / 被动：Windows 的散热策略。主动＝优先提高风扇转速再降频；被动＝尽量不加速风扇，先降频。\r\n睿频（Turbo Boost）：CPU 在功耗和温度允许时自动超出标称频率运行，关闭后峰值性能下降，但更省电、更凉。");
 
             panel.Resize += (s, e) =>
             {
@@ -2894,6 +2969,35 @@ namespace BrightnessApp
             };
             hint.SetBounds(12, 216, 600, 20);
             gb.Controls.Add(hint);
+
+            Tip(_plan, "电源计划（Power Scheme）：Windows 的一套电源策略集合，例如「平衡」「高性能」「节能」。\r\n它决定处理器、硬盘、显卡在不同场景下的省电方式。");
+            Tip(_overlay, "电源模式（Power Mode，也叫电源模式叠加）：在现有电源计划上再叠加一层性能倾向——节电 / 平衡 / 更好的性能。\r\n本程序只修改当前电源来源（插电或电池）对应的那一层。");
+            Tip(_btnApplyPower, "把上面修改的电源计划、电源模式、关屏/睡眠时间和最大处理器状态写入系统。\r\n修改前会自动备份旧值，可用「撤销上次修改」还原。");
+            Tip(_btnUndoPower, "把最近一次「应用并备份」涉及的项目还原成修改前的值。");
+            Tip(btnPowerCpl, "打开 Windows 自带的「电源选项」控制面板，可查看或新建电源计划。");
+            Tip(_acOff, "插电时，无人操作多久后关闭屏幕（只关屏，不一定睡眠）。");
+            Tip(_acSleep, "插电时，无人操作多久后进入睡眠。睡眠会暂停程序运行，唤醒后继续。");
+            Tip(_acMaxCpu, "最大处理器状态：限制 CPU 最高只能跑到标称频率的百分比。\r\n100% 表示不限制；数值越低越省电、越凉，但性能越弱。");
+            Tip(_dcOff, "使用电池时，无人操作多久后关闭屏幕（只关屏，不一定睡眠）。");
+            Tip(_dcSleep, "使用电池时，无人操作多久后进入睡眠。");
+            Tip(_btnSyncDc, "把「插电时」这一行的关屏、睡眠、最大处理器设置复制到「电池时」。");
+            Tip(_btnSyncAc, "把「电池时」这一行的关屏、睡眠、最大处理器设置复制到「插电时」。");
+            Tip(p1, "一键套用省电预设：缩短关屏/睡眠时间、限制处理器上限，适合用电池时延长续航。");
+            Tip(p2, "恢复为 Windows 默认的平衡策略：性能与耗电折中。");
+            Tip(p3, "提高处理器上限、散热更积极，适合插电做重活，但更耗电、更热。");
+            Tip(_chkAutoBright, "勾选后，插上电源或拔掉电源时，自动把亮度切到下面设定的「插电亮度 / 电池亮度」。");
+            Tip(_acBrightLevel, "插电时自动切换到的亮度百分比。");
+            Tip(_dcBrightLevel, "使用电池时自动切换到的亮度百分比。");
+            Tip(_chkLock, "插拔电源时自动切换电源模式：插电用一个模式、电池用另一个模式，并持续检查纠正。");
+            Tip(_lockAc, "插电时强制使用的电源模式。锁定后会定期检查，被系统改回时自动再设回去。");
+            Tip(_lockDc, "使用电池时强制使用的电源模式。");
+            Tip(_btnLockRestore, "关闭插拔自动锁定，并把锁定期间改过的电源模式还原成锁定前的值。");
+            Tip(_btnLockApply, "不等插拔事件，立即按当前选择强制应用一次电源模式。");
+            Tip(_chkSaver, "让 Windows 的「节电模式」（Battery Saver）常开，即使插着电源也生效。\r\n它会限制后台活动、可能压暗屏幕，以换取更低功耗。");
+            Tip(_btnRestoreAllPower, "把本程序改过的全部电源相关设置还原到最初的备份。");
+            Tip(_btnElevate, "当前权限不足以写电源设置时，以管理员身份重新启动本程序。");
+            Tip(_lblPowerMsg, "显示最近一次电源操作的结果或失败原因。");
+            Tip(_lblPowerState, "显示当前电源来源、电源计划和电源模式的实时状态。");
 
             // 窗口变宽时把右侧按钮贴右排列，避免被挤住或裁掉
             gb.Resize += (s, e) =>
@@ -3363,7 +3467,7 @@ namespace BrightnessApp
         {
             PowerState st = _powerState;
             var sb = new StringBuilder();
-            sb.AppendLine("亮度控制 " + Program.Version + " · " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+            sb.AppendLine(Program.AppName + " " + Program.Version + " · " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
             sb.AppendLine("电源来源：" + (PowerCtl.OnAc() ? "插电" : "电池"));
             if (st != null)
             {
@@ -3652,6 +3756,70 @@ namespace BrightnessApp
             }
         }
 
+        // 状态表里各技术名词的解释
+        static string InfoTip(string key)
+        {
+            switch (key)
+            {
+                case "CPU 频率":
+                    return "处理器当前实际运行频率（标称主频 × 性能百分比）。\r\n省电档会明显低于标称频率，性能档会接近或达到最高频率。";
+                case "CPU 占用":
+                    return "所有程序合计占用 CPU 的比例。数值高说明当前有程序在大量计算。";
+                case "屏幕型号":
+                    return "内置屏面板的型号代码（从显示器 EDID 读取），用于区分不同面板。";
+                case "显卡":
+                    return "当前使用的显卡或核显型号。亮度、Vari-Bright 等显示相关功能由它控制。";
+                case "制造商 / 日期":
+                    return "显示器厂商代码与生产年份、周数（从显示器信息读取）。";
+                case "驱动版本":
+                    return "显卡驱动的版本号。显示异常或亮度调节失效时，可据此判断是否需要更新驱动。";
+                case "亮度档位":
+                    return "这块屏固件支持的亮度级数与范围，例如 0-100（101 级）表示可调 101 个档位。";
+                case "显示器数量":
+                    return "系统当前识别到的显示器数量（含内置屏与虚拟显示器）。";
+                case "外接屏":
+                    return "外接显示器的数量与型号。外接屏亮度通过 DDC/CI 调节，需要显示器支持。";
+                case "外接屏亮度":
+                    return "外接屏当前亮度（DDC/CI 读回值）。部分显示器不支持读回，会显示「未知」。";
+                case "当前亮度":
+                    return "内置屏当前亮度百分比。";
+                case "电源方案":
+                    return "Windows 当前启用的电源计划（平衡、高性能、节电等），它决定处理器、硬盘、显卡的省电策略。";
+                case "节电模式":
+                    return "Windows 的「节电模式 / Battery Saver」：限制后台活动、可能压暗屏幕来延长续航。\r\n本程序可以让它「常开」，即使插着电源也生效。";
+                case "节电亮度系数":
+                    return "开启节电模式时，系统把背光乘以的百分比系数。系数越低，屏幕越暗、越省电。";
+                case "自适应亮度":
+                    return "根据环境光传感器自动调整屏幕亮度。桌面显示器一般没有该传感器，通常显示「已关闭」。";
+                case "变暗后亮度":
+                    return "系统在「一段时间无操作但还没关屏」时，把屏幕变暗到的亮度百分比。";
+                case "显示器超时":
+                    return "无人操作多久后自动关闭屏幕（只关屏，不一定进入睡眠）。";
+                case "Vari-Bright":
+                    return "AMD 显卡的低功耗显示技术：自动降低背光电流和对比度来省电。\r\n等级越高省电越明显，但画面可能偏灰偏暗。可在「状态」页顶部按钮一键关闭或恢复。";
+                case "虚拟显示驱动":
+                    return "远程桌面、投屏、虚拟显示器等软件创建的虚拟显示适配器，可能影响亮度接口的可用性。";
+                case "电池":
+                    return "电池剩余电量与当前供电状态（已接电源 / 使用电池）。";
+                case "剩余时间":
+                    return "系统根据当前功耗对电池续航的估算值；刚插拔电源时可能暂时显示「系统未估算」。";
+                case "系统版本":
+                    return "Windows 的产品名称、功能更新版本与内部版本号。";
+                case "日志文件":
+                    return "今天写入的操作日志文件名；日志里记录每次亮度与电源设置的变更结果。";
+                case "日志条数":
+                    return "当前筛选条件下显示的日志条数。";
+            }
+            return "";
+        }
+
+        // 给控件挂名词提示；总开关关闭时 _tip.Active=false，全部提示都不弹
+        void Tip(Control c, string text)
+        {
+            if (c == null || string.IsNullOrEmpty(text)) return;
+            _tip.SetToolTip(c, text);
+        }
+
         Button MakeButton(string text, int width, EventHandler onClick)
         {
             var b = new Button
@@ -3704,17 +3872,25 @@ namespace BrightnessApp
                 int row = i / 2;
                 grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
 
-                grid.Controls.Add(MakeCaption(captions[i]), 0, row);
+                Label c1 = MakeCaption(captions[i]);
+                grid.Controls.Add(c1, 0, row);
                 var v1 = MakeValue();
                 grid.Controls.Add(v1, 1, row);
                 _info[captions[i]] = v1;
+                string t1 = InfoTip(captions[i]);
+                Tip(c1, t1);
+                Tip(v1, t1);
 
                 if (i + 1 < captions.Length)
                 {
-                    grid.Controls.Add(MakeCaption(captions[i + 1]), 2, row);
+                    Label c2 = MakeCaption(captions[i + 1]);
+                    grid.Controls.Add(c2, 2, row);
                     var v2 = MakeValue();
                     grid.Controls.Add(v2, 3, row);
                     _info[captions[i + 1]] = v2;
+                    string t2 = InfoTip(captions[i + 1]);
+                    Tip(c2, t2);
+                    Tip(v2, t2);
                 }
             }
 
@@ -3782,7 +3958,7 @@ namespace BrightnessApp
             _lblLogPath.AutoSize = false;
             _lblLogPath.AutoEllipsis = true;
             _lblLogPath.SetBounds(392, 8, 500, 20);
-            _lblLogPath.Text = LogStore.TodayFile;
+            _lblLogPath.Text = LogStore.DisplayPath(LogStore.TodayFile);
 
             var capFilter = new Label
             {
@@ -3814,6 +3990,7 @@ namespace BrightnessApp
 
             _list.Dock = DockStyle.Fill;
             _list.View = View.Details;
+            Tip(_list, "操作日志：记录每次亮度设置、电源修改、模式切换的结果。\r\nSET＝亮度写入；CHANGE＝电源设置变更；CONFIG＝程序配置；WARN/FAIL＝警告或失败。\r\n鼠标悬停某一行可看完整详情。");
             _list.FullRowSelect = true;
             _list.GridLines = true;
             _list.HideSelection = false;
@@ -4119,7 +4296,7 @@ namespace BrightnessApp
 
             _tray = new NotifyIcon();
             _tray.Icon = Icon;
-            _tray.Text = "亮度控制 " + Program.Version;
+            _tray.Text = Program.AppName + " " + Program.Version;
             _tray.ContextMenuStrip = menu;
             _tray.Visible = true;
             _tray.DoubleClick += (s, e) => RestoreFromTray();
@@ -4142,7 +4319,7 @@ namespace BrightnessApp
                 try
                 {
                     if (_tray != null)
-                        _tray.ShowBalloonTip(1500, "亮度控制", "已最小化到托盘，仍在后台运行。双击图标可再次打开。", ToolTipIcon.Info);
+                        _tray.ShowBalloonTip(1500, Program.AppName, "已最小化到托盘，仍在后台运行。双击图标可再次打开。", ToolTipIcon.Info);
                 }
                 catch { }
                 return;
@@ -4153,30 +4330,23 @@ namespace BrightnessApp
 
         static Icon MakeIcon()
         {
+            // 优先使用编译进 exe 的多尺寸图标，资源缺失时退回 exe 关联图标
             try
             {
-                using (var bmp = new Bitmap(32, 32))
-                using (var g = Graphics.FromImage(bmp))
+                var asm = System.Reflection.Assembly.GetExecutingAssembly();
+                using (var s = asm.GetManifestResourceStream("BrightnessApp.app.ico"))
                 {
-                    g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                    g.Clear(Color.Transparent);
-                    using (var brush = new SolidBrush(Color.FromArgb(255, 178, 40)))
-                        g.FillEllipse(brush, 9, 9, 14, 14);
-                    using (var pen = new Pen(Color.FromArgb(226, 142, 16), 2.4f))
-                    {
-                        for (int i = 0; i < 8; i++)
-                        {
-                            double a = i * Math.PI / 4;
-                            g.DrawLine(pen,
-                                (float)(16 + Math.Cos(a) * 10), (float)(16 + Math.Sin(a) * 10),
-                                (float)(16 + Math.Cos(a) * 14), (float)(16 + Math.Sin(a) * 14));
-                        }
-                    }
-                    IntPtr h = bmp.GetHicon();
-                    return Icon.FromHandle(h);
+                    if (s != null) return new Icon(s);
                 }
             }
-            catch { return SystemIcons.Application; }
+            catch { }
+            try
+            {
+                Icon exe = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+                if (exe != null) return exe;
+            }
+            catch { }
+            return SystemIcons.Application;
         }
 
         static string Trace(Exception ex)
@@ -4349,7 +4519,7 @@ namespace BrightnessApp
 
                 string shown = string.IsNullOrEmpty(LogStore.LastReadFile)
                     ? LogStore.TodayFile : LogStore.LastReadFile;
-                _lblLogPath.Text = shown;
+                _lblLogPath.Text = LogStore.DisplayPath(shown);
                 Set("日志文件", Path.GetFileName(shown), false);
                 Set("日志条数", shownCount + " 条", false);
             }
@@ -4386,7 +4556,6 @@ namespace BrightnessApp
                 var sb = new StringBuilder();
                 sb.AppendLine("亮度和显示状态诊断报告");
                 sb.AppendLine("导出时间：" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-                sb.AppendLine("计算机：" + Environment.MachineName + "    用户：" + Environment.UserName);
                 MonitorTarget t = CurrentTarget();
                 sb.AppendLine("控制目标：" + (t != null ? t.Name : "-"));
                 sb.AppendLine(new string('-', 60));

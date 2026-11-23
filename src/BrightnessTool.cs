@@ -268,9 +268,8 @@ static class Program
         {
             if (!Directory.Exists(LogDir)) Directory.CreateDirectory(LogDir);
             string file = Path.Combine(LogDir, "brightness-" + DateTime.Now.ToString("yyyyMMdd") + ".log");
-            string line = string.Format("{0} | {1,-5} | {2} | user={3} | host={4}",
-                DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), action, detail,
-                Environment.UserName, Environment.MachineName);
+            string line = string.Format("{0} | {1,-5} | {2}",
+                DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), action, detail);
             File.AppendAllText(file, line + Environment.NewLine, new UTF8Encoding(false));
         }
         catch { }
