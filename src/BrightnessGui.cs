@@ -15,7 +15,7 @@ namespace BrightnessApp
 {
     static class Program
     {
-        public const string Version = "1.1.6";
+        public const string Version = "1.1.9";
 
         [STAThread]
         static void Main()
@@ -656,6 +656,12 @@ namespace BrightnessApp
         public int DcStandbyIdle = -1;
         public int AcMaxCpu = -1;
         public int DcMaxCpu = -1;
+        public int AcMinCpu = -1;
+        public int DcMinCpu = -1;
+        public int AcCooling = -1;
+        public int DcCooling = -1;
+        public int AcBoost = -1;
+        public int DcBoost = -1;
         public DateTime At = DateTime.Now;
     }
 
@@ -671,6 +677,9 @@ namespace BrightnessApp
         const string SetVideoIdleId = "3c0bc021-c8a8-4e07-a973-6b14cbcb2b7e";
         const string SetStandbyIdleId = "29f6c1db-86da-48c5-9fdb-f2b67b1f44da";
         const string SetMaxCpuId = "bc5038f7-23e0-4960-96da-33abaf5935ec";
+        const string SetMinCpuId = "893dee8e-2bef-41e0-89c6-b55d0929964c";
+        const string SetCoolingId = "94d3a615-a899-4ac5-ae2b-e4d8f634367f";
+        const string SetBoostModeId = "be337238-0d82-4146-a960-4f3749d470c7";
 
         [DllImport("powrprof.dll")]
         static extern uint PowerSetActiveOverlayScheme(Guid scheme);
@@ -758,6 +767,9 @@ namespace BrightnessApp
                 if (map.TryGetValue(SetVideoIdleId, out v)) { s.AcVideoIdle = v[0]; s.DcVideoIdle = v[1]; }
                 if (map.TryGetValue(SetStandbyIdleId, out v)) { s.AcStandbyIdle = v[0]; s.DcStandbyIdle = v[1]; }
                 if (map.TryGetValue(SetMaxCpuId, out v)) { s.AcMaxCpu = v[0]; s.DcMaxCpu = v[1]; }
+                if (map.TryGetValue(SetMinCpuId, out v)) { s.AcMinCpu = v[0]; s.DcMinCpu = v[1]; }
+                if (map.TryGetValue(SetCoolingId, out v)) { s.AcCooling = v[0]; s.DcCooling = v[1]; }
+                if (map.TryGetValue(SetBoostModeId, out v)) { s.AcBoost = v[0]; s.DcBoost = v[1]; }
             }
             catch { }
             return s;
@@ -869,6 +881,23 @@ namespace BrightnessApp
             return SetValue(ac, SubProcessor, SetMaxCpuId, pct, out err);
         }
 
+        public static bool SetMinCpu(bool ac, int pct, out string err)
+        {
+            return SetValue(ac, SubProcessor, SetMinCpuId, pct, out err);
+        }
+
+        // 系统散热方式：1 = 主动（风扇优先，减少降频），0 = 被动
+        public static bool SetCooling(bool ac, int value, out string err)
+        {
+            return SetValue(ac, SubProcessor, SetCoolingId, value, out err);
+        }
+
+        // 睿频策略：0 = 关闭，1 = 启用，2 = 激进
+        public static bool SetBoostMode(bool ac, int value, out string err)
+        {
+            return SetValue(ac, SubProcessor, SetBoostModeId, value, out err);
+        }
+
         public static bool Activate(out string err)
         {
             int code;
@@ -962,6 +991,12 @@ namespace BrightnessApp
             sb.AppendLine("standbyDc=" + s.DcStandbyIdle);
             sb.AppendLine("maxCpuAc=" + s.AcMaxCpu);
             sb.AppendLine("maxCpuDc=" + s.DcMaxCpu);
+            sb.AppendLine("minCpuAc=" + s.AcMinCpu);
+            sb.AppendLine("minCpuDc=" + s.DcMinCpu);
+            sb.AppendLine("coolAc=" + s.AcCooling);
+            sb.AppendLine("coolDc=" + s.DcCooling);
+            sb.AppendLine("boostAc=" + s.AcBoost);
+            sb.AppendLine("boostDc=" + s.DcBoost);
             File.WriteAllText(path, sb.ToString(), new UTF8Encoding(false));
         }
 
@@ -1006,6 +1041,12 @@ namespace BrightnessApp
                     else if (k == "standbyDc") s.DcStandbyIdle = ToInt(v);
                     else if (k == "maxCpuAc") s.AcMaxCpu = ToInt(v);
                     else if (k == "maxCpuDc") s.DcMaxCpu = ToInt(v);
+                    else if (k == "minCpuAc") s.AcMinCpu = ToInt(v);
+                    else if (k == "minCpuDc") s.DcMinCpu = ToInt(v);
+                    else if (k == "coolAc") s.AcCooling = ToInt(v);
+                    else if (k == "coolDc") s.DcCooling = ToInt(v);
+                    else if (k == "boostAc") s.AcBoost = ToInt(v);
+                    else if (k == "boostDc") s.DcBoost = ToInt(v);
                 }
                 if (!any) return null;
 
@@ -1422,6 +1463,146 @@ namespace BrightnessApp
         }
     }
 
+    // ── 大号滑动开关（左=ON，右=OFF） ─────────────────────────
+    class PowerToggle : Control
+    {
+        bool _on;
+        float _pos = 1F;                 // 滑块位置：0=最左(ON)，1=最右(OFF)
+        readonly Timer _anim = new Timer();
+        bool _hover;
+
+        public string Title = "";
+        public string SubOn = "";
+        public string SubOff = "";
+
+        public event EventHandler CheckedChanged;
+
+        public PowerToggle()
+        {
+            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer
+                | ControlStyles.UserPaint | ControlStyles.ResizeRedraw, true);
+            Cursor = Cursors.Hand;
+            Font = new Font("Microsoft YaHei UI", 9F);
+            _anim.Interval = 12;
+            _anim.Tick += (s, e) => StepAnim();
+        }
+
+        public bool Checked
+        {
+            get { return _on; }
+            set
+            {
+                if (_on == value)
+                {
+                    _pos = value ? 0F : 1F;
+                    Invalidate();
+                    return;
+                }
+                _on = value;
+                _anim.Start();
+                Invalidate();
+                EventHandler h = CheckedChanged;
+                if (h != null) h(this, EventArgs.Empty);
+            }
+        }
+
+        // 不触发事件、不做动画（用于程序同步状态）
+        public void SetCheckedSilent(bool value)
+        {
+            _on = value;
+            _pos = value ? 0F : 1F;
+            _anim.Stop();
+            Invalidate();
+        }
+
+        void StepAnim()
+        {
+            float target = _on ? 0F : 1F;
+            float d = target - _pos;
+            if (Math.Abs(d) < 0.04F) { _pos = target; _anim.Stop(); }
+            else _pos += d * 0.28F;
+            Invalidate();
+        }
+
+        protected override void OnMouseEnter(EventArgs e) { _hover = true; Invalidate(); base.OnMouseEnter(e); }
+        protected override void OnMouseLeave(EventArgs e) { _hover = false; Invalidate(); base.OnMouseLeave(e); }
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left) Checked = !_on;
+            base.OnMouseDown(e);
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            Graphics g = e.Graphics;
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+
+            Rectangle r = new Rectangle(1, 1, Width - 3, Height - 3);
+            int radius = r.Height / 2;
+
+            Color track = _on ? Color.FromArgb(205, 228, 250)
+                              : (_hover ? Color.FromArgb(226, 236, 248) : Color.FromArgb(235, 241, 250));
+            Color border = _on ? Color.FromArgb(72, 138, 208) : Color.FromArgb(150, 178, 210);
+
+            using (var path = RoundRect(r, radius))
+            {
+                using (var b = new SolidBrush(track)) g.FillPath(b, path);
+                using (var p = new Pen(border, _on ? 2F : 1F)) g.DrawPath(p, path);
+            }
+
+            int knob = r.Height - 12;
+            int minX = r.Left + 6;
+            int maxX = r.Right - 6 - knob;
+            int kx = (int)Math.Round(minX + (maxX - minX) * _pos);
+            int ky = r.Top + 6;
+            using (var kp = RoundRect(new Rectangle(kx, ky, knob, knob), knob / 2))
+            {
+                using (var b = new SolidBrush(Color.White)) g.FillPath(b, kp);
+                using (var p = new Pen(Color.FromArgb(110, 152, 196), 1.4F)) g.DrawPath(p, kp);
+            }
+
+            // 滑块里的 ON / OFF
+            string st = _on ? "ON" : "OFF";
+            using (var f = new Font(Font.FontFamily, 8.5F, FontStyle.Bold))
+            using (var b = new SolidBrush(_on ? Color.FromArgb(24, 90, 160) : Color.FromArgb(120, 136, 154)))
+            {
+                SizeF sz = g.MeasureString(st, f);
+                g.DrawString(st, f, b, kx + (knob - sz.Width) / 2F, ky + (knob - sz.Height) / 2F);
+            }
+
+            // 标题 + 状态说明
+            int textLeft = 16, textRight = Width - 16;
+            var area = new Rectangle(textLeft, 6, Math.Max(40, textRight - textLeft), Height - 12);
+            using (var f = new Font(Font.FontFamily, 11.5F, FontStyle.Bold))
+            using (var b = new SolidBrush(_on ? Color.FromArgb(12, 56, 104) : Color.FromArgb(48, 66, 88)))
+            {
+                var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+                g.DrawString(Title, f, b, new Rectangle(area.Left, area.Top, area.Width, area.Height - 14), sf);
+            }
+            using (var f = new Font(Font.FontFamily, 8.5F))
+            using (var b = new SolidBrush(_on ? Color.FromArgb(36, 96, 152) : Color.FromArgb(128, 142, 158)))
+            {
+                var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+                string sub = _on ? SubOn : SubOff;
+                g.DrawString(sub, f, b, new Rectangle(area.Left, area.Bottom - 18, area.Width, 18), sf);
+            }
+        }
+
+        static System.Drawing.Drawing2D.GraphicsPath RoundRect(Rectangle r, int radius)
+        {
+            var p = new System.Drawing.Drawing2D.GraphicsPath();
+            int d = Math.Max(2, radius * 2);
+            p.AddArc(r.Left, r.Top, d, d, 180, 90);
+            p.AddArc(r.Right - d, r.Top, d, d, 270, 90);
+            p.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
+            p.AddArc(r.Left, r.Bottom - d, d, d, 90, 90);
+            p.CloseFigure();
+            return p;
+        }
+    }
+
     // ── 主窗口 ───────────────────────────────────────────────
     class MainForm : Form
     {
@@ -1453,6 +1634,9 @@ namespace BrightnessApp
         readonly Button _btnSyncAc = new Button();
         readonly Button _btnSyncDc = new Button();
         readonly Button _btnRestoreAllPower = new Button();
+        readonly PowerToggle _tgPerf = new PowerToggle();
+        readonly PowerToggle _tgSaver = new PowerToggle();
+        bool _modeSyncing;
         readonly Label _lblPowerState = new Label();
         readonly Label _lblPowerMsg = new Label();
         readonly CheckBox _chkLock = new CheckBox();
@@ -1492,7 +1676,7 @@ namespace BrightnessApp
         {
             Text = "亮度控制 " + Program.Version + " · " + Environment.MachineName + " · " + Environment.UserName;
             StartPosition = FormStartPosition.Manual;
-            ClientSize = new Size(1080, 992);
+            ClientSize = new Size(1080, 1038);
             MinimumSize = new Size(1100, 700);
             Font = PickFont();
             BackColor = Color.FromArgb(250, 250, 252);
@@ -1653,13 +1837,14 @@ namespace BrightnessApp
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 6,
+                RowCount = 7,
                 Padding = new Padding(12)
             };
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 156));
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 188));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 100));
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 176));
 
@@ -1667,8 +1852,9 @@ namespace BrightnessApp
             root.Controls.Add(BuildActionPanel(), 0, 1);
             root.Controls.Add(BuildOptionsPanel(), 0, 2);
             root.Controls.Add(BuildPowerPanel(), 0, 3);
-            root.Controls.Add(BuildInfoPanel(), 0, 4);
-            root.Controls.Add(BuildLogPanel(), 0, 5);
+            root.Controls.Add(BuildUnleashPanel(), 0, 4);
+            root.Controls.Add(BuildInfoPanel(), 0, 5);
+            root.Controls.Add(BuildLogPanel(), 0, 6);
 
             Controls.Add(root);
         }
@@ -1839,7 +2025,7 @@ namespace BrightnessApp
 
         // ── 电源与插电设置 ──────────────────────────────────
         static readonly int[] TimeValues = new int[] { 60, 120, 180, 240, 300, 600, 900, 1200, 1800, 2700, 3600, 5400, 7200, 10800, 0 };
-        static readonly int[] CpuValues = new int[] { 100, 95, 90, 85, 80, 75, 70, 60, 50 };
+        static readonly int[] CpuValues = new int[] { 100, 95, 90, 85, 80, 75, 70, 60, 50, 30 };
         static readonly int[] LevelValues = new int[] { 100, 90, 80, 70, 60, 50, 40, 30, 20, 10 };
 
         static string TimeText(int sec)
@@ -1889,6 +2075,276 @@ namespace BrightnessApp
             for (int i = 0; i < LevelValues.Length; i++)
                 if (LevelValues[i] == pct) return i;
             return 2;
+        }
+
+        // 并排两个大号滑动开关：左=ON，右=OFF；两者互斥
+        Control BuildUnleashPanel()
+        {
+            var panel = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
+
+            _tgPerf.Title = "释放全部性能";
+            _tgPerf.SubOn = "已开启 · 插电不限频";
+            _tgPerf.SubOff = "已关闭 · 点一下开启";
+            _tgPerf.CheckedChanged += (s, e) => OnModeToggled(_tgPerf, true);
+
+            _tgSaver.Title = "超级节能";
+            _tgSaver.SubOn = "已开启 · 插电/电池都锁最省";
+            _tgSaver.SubOff = "已关闭 · 点一下开启";
+            _tgSaver.CheckedChanged += (s, e) => OnModeToggled(_tgSaver, false);
+
+            panel.Controls.Add(_tgPerf);
+            panel.Controls.Add(_tgSaver);
+
+            var tip = new Label
+            {
+                Text = "两个开关互斥，关闭时会还原到打开前的状态。释放全部性能：处理器 100%、散热主动、关闭插电节电。超级节能：处理器限 30%、散热被动、关闭睿频、插电和电池都锁节电模式。",
+                ForeColor = Color.Gray,
+                AutoSize = false,
+                AutoEllipsis = true,
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+            panel.Controls.Add(tip);
+
+            panel.Resize += (s, e) =>
+            {
+                int gap = 12;
+                int w = Math.Max(240, (panel.ClientSize.Width - gap) / 2);
+                _tgPerf.SetBounds(0, 0, w, 58);
+                _tgSaver.SetBounds(w + gap, 0, w, 58);
+                tip.SetBounds(0, 62, panel.ClientSize.Width, 20);
+            };
+
+            return panel;
+        }
+
+        void OnModeToggled(PowerToggle src, bool perf)
+        {
+            if (_modeSyncing) return;
+            if (src.Checked) SetMode(perf);
+            else RestoreMode();
+        }
+
+        // 打开某个模式：先关掉另一个（会还原），再备份当前状态并应用
+        void SetMode(bool perf)
+        {
+            _modeSyncing = true;
+            try
+            {
+                if (perf)
+                {
+                    if (_tgSaver.Checked) RestoreModeCore();
+                    ApplyPerformance();
+                }
+                else
+                {
+                    if (_tgPerf.Checked) RestoreModeCore();
+                    ApplySaver();
+                }
+            }
+            finally
+            {
+                _modeSyncing = false;
+                RefreshModeToggles();
+            }
+        }
+
+        void RestoreMode()
+        {
+            if (_modeSyncing) return;
+            _modeSyncing = true;
+            try { RestoreModeCore(); }
+            finally
+            {
+                _modeSyncing = false;
+                RefreshModeToggles();
+            }
+        }
+
+        // 释放全部性能：插电不限频、散热主动、关掉插电节电
+        void ApplyPerformance()
+        {
+            PowerState now = PowerCtl.Read();
+            _powerState = now;
+            try { PowerCtl.SaveSnapshot(now); } catch { }
+            LogStore.Write("CONFIG", "mode=perf: overlay=maxperf mincpu=100 maxcpu=100 cooling=active saverAc=off");
+
+            var errs = new List<string>();
+            string err;
+
+            if (!PowerCtl.SetOverlay(PowerCtl.OverlayMaxPerf, out err)) errs.Add("电源模式：" + err);
+            if (!PowerCtl.SetMinCpu(true, 100, out err)) errs.Add("最小处理器：" + err);
+            if (!PowerCtl.SetMaxCpu(true, 100, out err)) errs.Add("最大处理器：" + err);
+            if (!PowerCtl.SetCooling(true, 1, out err)) errs.Add("散热方式：" + err);
+            if (!PowerCtl.SetBoostMode(true, 2, out err)) errs.Add("睿频策略：" + err);
+
+            // 关键：插电若被“节电模式”强制开启，CPU 会被锁在基频、完全没有睿频
+            SaverPolicy.SaveBackupForce();
+            string saverMsg;
+            if (!SaverPolicy.AllowPluggedIn(out saverMsg)) errs.Add("插电节电限制：" + saverMsg);
+
+            PowerCtl.Activate(out err);
+
+            _powerSyncing = true;
+            try
+            {
+                _overlay.SelectedIndex = 2;
+                _acMaxCpu.SelectedIndex = FindCpuIndex(100);
+            }
+            finally { _powerSyncing = false; }
+
+            _powerState = PowerCtl.Read();
+            RefreshPowerUi();
+            RefreshStatus();
+            UiFile.Set("mode", "perf");
+            RefreshModeToggles();
+            ReportModeResult("已释放全部性能：不上限、散热主动、插电节电已关闭。", errs);
+            LoadLogs();
+        }
+
+        // 超级节能：插电/电池都锁最省
+        void ApplySaver()
+        {
+            PowerState now = PowerCtl.Read();
+            _powerState = now;
+            try { PowerCtl.SaveSnapshot(now); } catch { }
+
+            var errs = new List<string>();
+            string err;
+
+            // 有「超级节能」方案就切过去，再逐项压实
+            PowerScheme target = null;
+            foreach (PowerScheme ps in PowerCtl.ListSchemes())
+                if (ps.Name != null && ps.Name.IndexOf("超级节能") >= 0) { target = ps; break; }
+            if (target != null && !string.Equals(target.Guid, now.SchemeGuid, StringComparison.OrdinalIgnoreCase))
+            {
+                if (!PowerCtl.SetScheme(target.Guid, out err)) errs.Add("电源计划：" + err);
+            }
+
+            if (!PowerCtl.SetOverlay(PowerCtl.OverlayBattery, out err)) errs.Add("电源模式：" + err);
+
+            bool admin = PowerCtl.IsAdmin();
+            if (!PowerCtl.SetMaxCpu(true, 30, out err) && admin) errs.Add("插电·最大处理器：" + err);
+            if (!PowerCtl.SetMinCpu(true, 5, out err) && admin) errs.Add("插电·最小处理器：" + err);
+            if (!PowerCtl.SetCooling(true, 0, out err) && admin) errs.Add("插电·散热方式：" + err);
+            if (!PowerCtl.SetBoostMode(true, 0, out err) && admin) errs.Add("插电·睿频：" + err);
+            if (!PowerCtl.SetMaxCpu(false, 30, out err) && admin) errs.Add("电池·最大处理器：" + err);
+            if (!PowerCtl.SetMinCpu(false, 5, out err) && admin) errs.Add("电池·最小处理器：" + err);
+            if (!PowerCtl.SetCooling(false, 0, out err) && admin) errs.Add("电池·散热方式：" + err);
+            if (!PowerCtl.SetBoostMode(false, 0, out err) && admin) errs.Add("电池·睿频：" + err);
+
+            // 插电、电池都强制开启节电模式
+            SaverPolicy.SaveBackupForce();
+            string saverMsg;
+            if (!SaverPolicy.ForceAlwaysOn(out saverMsg)) errs.Add("节电模式：" + saverMsg);
+
+            PowerCtl.Activate(out err);
+
+            _powerSyncing = true;
+            try
+            {
+                _overlay.SelectedIndex = 0;
+                _acMaxCpu.SelectedIndex = FindCpuIndex(30);
+            }
+            finally { _powerSyncing = false; }
+
+            _powerState = PowerCtl.Read();
+            RefreshPowerUi();
+            RefreshStatus();
+            UiFile.Set("mode", "saver");
+            RefreshModeToggles();
+            LogStore.Write("CONFIG", "mode=saver: maxcpu=30 cooling=passive boost=off saver=always");
+            ReportModeResult("超级节能已开启：插电和电池都锁定最省电（30% + 被动散热 + 关睿频）。", errs);
+            LoadLogs();
+        }
+
+        // 关掉开关：还原到打开前的备份
+        void RestoreModeCore()
+        {
+            PowerState snap = PowerCtl.LoadSnapshot();
+            if (snap == null)
+            {
+                _tgPerf.SetCheckedSilent(false);
+                _tgSaver.SetCheckedSilent(false);
+                ShowPowerMsg("没找到打开前的备份，未做还原。", true);
+                return;
+            }
+
+            var errs = new List<string>();
+            string err;
+            bool online = PowerCtl.OnAc();
+
+            if (!string.IsNullOrEmpty(snap.SchemeGuid) && !PowerCtl.SetScheme(snap.SchemeGuid, out err)) errs.Add("电源计划：" + err);
+
+            // 一路还原 AC 与 DC，避免插拔后状态不一致
+            bool admin = PowerCtl.IsAdmin();
+            if (snap.AcMaxCpu > 0 && !PowerCtl.SetMaxCpu(true, snap.AcMaxCpu, out err) && admin) errs.Add("插电·最大处理器：" + err);
+            if (snap.AcMinCpu >= 0 && !PowerCtl.SetMinCpu(true, snap.AcMinCpu, out err) && admin) errs.Add("插电·最小处理器：" + err);
+            if (snap.AcCooling >= 0 && !PowerCtl.SetCooling(true, snap.AcCooling, out err) && admin) errs.Add("插电·散热：" + err);
+            if (snap.AcBoost >= 0 && !PowerCtl.SetBoostMode(true, snap.AcBoost, out err) && admin) errs.Add("插电·睿频：" + err);
+            if (snap.DcMaxCpu > 0 && !PowerCtl.SetMaxCpu(false, snap.DcMaxCpu, out err) && admin) errs.Add("电池·最大处理器：" + err);
+            if (snap.DcMinCpu >= 0 && !PowerCtl.SetMinCpu(false, snap.DcMinCpu, out err) && admin) errs.Add("电池·最小处理器：" + err);
+            if (snap.DcCooling >= 0 && !PowerCtl.SetCooling(false, snap.DcCooling, out err) && admin) errs.Add("电池·散热：" + err);
+            if (snap.DcBoost >= 0 && !PowerCtl.SetBoostMode(false, snap.DcBoost, out err) && admin) errs.Add("电池·睿频：" + err);
+
+            if (snap.AcVideoIdle >= 0 && !PowerCtl.SetVideoIdle(true, snap.AcVideoIdle, out err)) errs.Add("插电·关屏：" + err);
+            if (snap.AcStandbyIdle >= 0 && !PowerCtl.SetStandbyIdle(true, snap.AcStandbyIdle, out err)) errs.Add("插电·睡眠：" + err);
+            if (snap.DcVideoIdle >= 0 && !PowerCtl.SetVideoIdle(false, snap.DcVideoIdle, out err)) errs.Add("电池·关屏：" + err);
+            if (snap.DcStandbyIdle >= 0 && !PowerCtl.SetStandbyIdle(false, snap.DcStandbyIdle, out err)) errs.Add("电池·睡眠：" + err);
+
+            if (!PowerCtl.SetOverlay(online ? snap.AcOverlay : snap.DcOverlay, out err)) errs.Add("电源模式：" + err);
+
+            // 节电策略按打开前的备份还原
+            string saverMsg;
+            if (!SaverPolicy.RestoreBackup(out saverMsg)) errs.Add("节电模式：" + saverMsg);
+
+            PowerCtl.Activate(out err);
+
+            _tgPerf.SetCheckedSilent(false);
+            _tgSaver.SetCheckedSilent(false);
+            UiFile.Set("mode", "");
+
+            _powerState = PowerCtl.Read();
+            RefreshPowerUi();
+            RefreshStatus();
+            LogStore.Write("CONFIG", "mode=off: " + (errs.Count == 0 ? "OK" : string.Join(";", errs.ToArray())));
+            ShowPowerMsg(errs.Count == 0 ? "已关闭，并还原到打开前的状态。" : ("已关闭，部分还原失败：" + string.Join("；", errs.ToArray())), errs.Count > 0);
+            LoadLogs();
+        }
+
+        void ReportModeResult(string okText, List<string> errs)
+        {
+            if (errs.Count > 0)
+            {
+                string tail = PowerCtl.IsAdmin() ? "" : "；可点『以管理员身份重启』再试";
+                ShowPowerMsg("部分改动没成功：" + string.Join("；", errs.ToArray()) + tail, true);
+                _btnElevate.Visible = true;
+            }
+            else ShowPowerMsg(okText, false);
+        }
+
+        // 依据系统实际状态点亮对应开关
+        void RefreshModeToggles()
+        {
+            PowerState s = _powerState;
+            if (s == null) return;
+
+            string mode = UiFile.Get("mode", "");
+            bool saverOn = false, perfOn = false;
+
+            if (mode == "saver")
+            {
+                bool forced = SaverPolicy.ForcedBoth;
+                saverOn = forced || (s.AcMaxCpu > 0 && s.AcMaxCpu <= 30 && s.AcCooling == 0);
+                if (!saverOn) { UiFile.Set("mode", ""); mode = ""; }
+            }
+            else if (mode == "perf")
+            {
+                perfOn = s.AcMaxCpu >= 100 && s.AcMinCpu >= 100;
+                if (!perfOn) { UiFile.Set("mode", ""); mode = ""; }
+            }
+
+            _tgPerf.SetCheckedSilent(perfOn);
+            _tgSaver.SetCheckedSilent(saverOn);
         }
 
         Control BuildPowerPanel()
@@ -2239,6 +2695,8 @@ namespace BrightnessApp
                     _chkSaver.Checked = SaverPolicy.IsOn();
                 }
                 finally { _lockSyncing = false; }
+
+                RefreshModeToggles();
             }
             catch (Exception ex)
             {
@@ -2378,6 +2836,7 @@ namespace BrightnessApp
 
             PowerState after = PowerCtl.Read();
             _powerState = after;
+            UiFile.Set("mode", "");   // 手动改过设置，两个开关回到未开启状态
             RefreshPowerUi();
             RefreshStatus();
 
@@ -2418,7 +2877,10 @@ namespace BrightnessApp
                 + "  电源模式：" + PowerCtl.OverlayName(PowerCtl.OnAc() ? snap.AcOverlay : snap.DcOverlay) + "\r\n"
                 + "  插电 · 关屏/睡眠：" + TimeText(snap.AcVideoIdle) + " / " + TimeText(snap.AcStandbyIdle) + "\r\n"
                 + "  电池 · 关屏/睡眠：" + TimeText(snap.DcVideoIdle) + " / " + TimeText(snap.DcStandbyIdle) + "\r\n"
-                + "  插电 · 最大处理器：" + snap.AcMaxCpu + "%\r\n\r\n继续？";
+                + "  插电 · 最大处理器：" + snap.AcMaxCpu + "%\r\n"
+                + (snap.AcMinCpu > 0 ? "  插电 · 最小处理器：" + snap.AcMinCpu + "%\r\n" : "")
+                + (snap.AcCooling >= 0 ? "  插电 · 散热方式：" + (snap.AcCooling == 1 ? "主动" : "被动") + "\r\n" : "")
+                + "\r\n继续？";
 
             if (MessageBox.Show(msg, "撤销上次修改", MessageBoxButtons.OKCancel,
                 MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.OK)
@@ -2432,12 +2894,15 @@ namespace BrightnessApp
             if (snap.AcVideoIdle >= 0 && !PowerCtl.SetVideoIdle(true, snap.AcVideoIdle, out err)) errs.Add("插电·关屏：" + err);
             if (snap.AcStandbyIdle >= 0 && !PowerCtl.SetStandbyIdle(true, snap.AcStandbyIdle, out err)) errs.Add("插电·睡眠：" + err);
             if (snap.AcMaxCpu > 0 && !PowerCtl.SetMaxCpu(true, snap.AcMaxCpu, out err)) errs.Add("插电·最大处理器：" + err);
+            if (snap.AcMinCpu >= 0 && !PowerCtl.SetMinCpu(true, snap.AcMinCpu, out err)) errs.Add("插电·最小处理器：" + err);
+            if (snap.AcCooling >= 0 && !PowerCtl.SetCooling(true, snap.AcCooling, out err)) errs.Add("插电·散热方式：" + err);
             if (snap.DcVideoIdle >= 0 && !PowerCtl.SetVideoIdle(false, snap.DcVideoIdle, out err)) errs.Add("电池·关屏：" + err);
             if (snap.DcStandbyIdle >= 0 && !PowerCtl.SetStandbyIdle(false, snap.DcStandbyIdle, out err)) errs.Add("电池·睡眠：" + err);
 
             PowerCtl.Activate(out err);
 
             _powerState = PowerCtl.Read();
+            UiFile.Set("mode", "");   // 撤销后开关回到未开启状态
             RefreshPowerUi();
             RefreshStatus();
             LoadLogs();
@@ -2489,6 +2954,8 @@ namespace BrightnessApp
                 + "  插电 关屏/睡眠：" + TimeText(snap.AcVideoIdle) + " / " + TimeText(snap.AcStandbyIdle) + "\r\n"
                 + "  电池 关屏/睡眠：" + TimeText(snap.DcVideoIdle) + " / " + TimeText(snap.DcStandbyIdle) + "\r\n"
                 + "  插电/电池 最大处理器：" + snap.AcMaxCpu + "% / " + snap.DcMaxCpu + "%\r\n"
+                + (snap.AcMinCpu > 0 ? "  插电/电池 最小处理器：" + snap.AcMinCpu + "% / " + snap.DcMinCpu + "%\r\n" : "")
+                + (snap.AcCooling >= 0 ? "  插电/电池 散热方式：" + (snap.AcCooling == 1 ? "主动" : "被动") + "\r\n" : "")
                 + "  插拔自动锁定：关闭\r\n"
                 + (saverOn ? "  节电模式常开：关闭并还原策略\r\n" : "")
                 + "\r\n继续？";
@@ -2505,9 +2972,13 @@ namespace BrightnessApp
             if (snap.AcVideoIdle >= 0 && !PowerCtl.SetVideoIdle(true, snap.AcVideoIdle, out err)) errs.Add("插电·关屏：" + err);
             if (snap.AcStandbyIdle >= 0 && !PowerCtl.SetStandbyIdle(true, snap.AcStandbyIdle, out err)) errs.Add("插电·睡眠：" + err);
             if (snap.AcMaxCpu > 0 && !PowerCtl.SetMaxCpu(true, snap.AcMaxCpu, out err)) errs.Add("插电·处理器：" + err);
+            if (snap.AcMinCpu >= 0 && !PowerCtl.SetMinCpu(true, snap.AcMinCpu, out err)) errs.Add("插电·最小处理器：" + err);
+            if (snap.AcCooling >= 0 && !PowerCtl.SetCooling(true, snap.AcCooling, out err)) errs.Add("插电·散热：" + err);
             if (snap.DcVideoIdle >= 0 && !PowerCtl.SetVideoIdle(false, snap.DcVideoIdle, out err)) errs.Add("电池·关屏：" + err);
             if (snap.DcStandbyIdle >= 0 && !PowerCtl.SetStandbyIdle(false, snap.DcStandbyIdle, out err)) errs.Add("电池·睡眠：" + err);
             if (snap.DcMaxCpu > 0 && !PowerCtl.SetMaxCpu(false, snap.DcMaxCpu, out err)) errs.Add("电池·处理器：" + err);
+            if (snap.DcMinCpu >= 0 && !PowerCtl.SetMinCpu(false, snap.DcMinCpu, out err)) errs.Add("电池·最小处理器：" + err);
+            if (snap.DcCooling >= 0 && !PowerCtl.SetCooling(false, snap.DcCooling, out err)) errs.Add("电池·散热：" + err);
             PowerCtl.Activate(out err);
 
             // 只取消勾选锁定，避免再写一次覆盖刚还原的模式
@@ -3687,11 +4158,182 @@ namespace BrightnessApp
             catch { return false; }
         }
 
+        // 插电与电池都被强制锁定节电模式
+        public static bool ForcedBoth
+        {
+            get
+            {
+                try
+                {
+                    using (RegistryKey k = Registry.LocalMachine.OpenSubKey(KeyPath))
+                    {
+                        if (k == null) return false;
+                        object ac = k.GetValue("ACSettingIndex");
+                        object dc = k.GetValue("DCSettingIndex");
+                        if (ac == null || dc == null) return false;
+                        return Convert.ToInt32(ac) >= 100 && Convert.ToInt32(dc) >= 100;
+                    }
+                }
+                catch { return false; }
+            }
+        }
+
+        // 插电、电池都强制开启节电模式（超级节能用）
+        public static bool ForceAlwaysOn(out string msg)
+        {
+            msg = "";
+            string script = Path.Combine(Path.GetTempPath(), "saver-force-on.ps1");
+            try
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine("$ErrorActionPreference='SilentlyContinue'");
+                sb.AppendLine("$key='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Power\\PowerSettings\\E69653CA-CF7F-4F05-AA73-CB833FA90AD4'");
+                sb.AppendLine("New-Item $key -Force | Out-Null");
+                sb.AppendLine("New-ItemProperty $key -Name ACSettingIndex -Value 100 -PropertyType DWord -Force | Out-Null");
+                sb.AppendLine("New-ItemProperty $key -Name DCSettingIndex -Value 100 -PropertyType DWord -Force | Out-Null");
+                sb.AppendLine("gpupdate /force /target:computer | Out-Null");
+                File.WriteAllText(script, sb.ToString(), new UTF8Encoding(false));
+
+                var psi = new ProcessStartInfo("powershell.exe",
+                    "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"" + script + "\"");
+                psi.UseShellExecute = true;
+                psi.Verb = "runas";
+                psi.WindowStyle = ProcessWindowStyle.Hidden;
+
+                using (Process p = Process.Start(psi))
+                {
+                    if (!p.WaitForExit(90000))
+                    {
+                        try { p.Kill(); } catch { }
+                        msg = "提权任务超时，请手动再试一次";
+                        return false;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                msg = "未获得管理员授权：" + ex.Message;
+                return false;
+            }
+
+            if (!ForcedBoth)
+            {
+                msg = "策略已写入，但系统尚未生效（可稍后重试）";
+                return false;
+            }
+            return true;
+        }
+
+        // 按备份文件还原节电策略（不判断 IsOn，因为备份本身可能就带 DC=100）
+        public static bool RestoreBackup(out string msg)
+        {
+            msg = "";
+            string script = Path.Combine(Path.GetTempPath(), "saver-restore.ps1");
+            try
+            {
+                File.WriteAllText(script, BuildScript(false), new UTF8Encoding(false));
+
+                var psi = new ProcessStartInfo("powershell.exe",
+                    "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"" + script + "\"");
+                psi.UseShellExecute = true;
+                psi.Verb = "runas";
+                psi.WindowStyle = ProcessWindowStyle.Hidden;
+
+                using (Process p = Process.Start(psi))
+                {
+                    if (!p.WaitForExit(90000))
+                    {
+                        try { p.Kill(); } catch { }
+                        msg = "提权任务超时";
+                        return false;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                msg = "未获得管理员授权：" + ex.Message;
+                return false;
+            }
+            return true;
+        }
+
+        // 确保插电时不被节电模式限制：把策略里的“插电阈值”改为 0（电池阈值保留）
+        // 阈值=100 会让系统在插电时也强制节电，CPU 被钉在基频、完全失去睿频
+        public static bool AllowPluggedIn(out string msg)
+        {
+            msg = "";
+            if (AcThresholdOk()) return true;
+
+            string script = Path.Combine(Path.GetTempPath(), "saver-ac-off.ps1");
+            try
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine("$ErrorActionPreference='SilentlyContinue'");
+                sb.AppendLine("$key='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Power\\PowerSettings\\E69653CA-CF7F-4F05-AA73-CB833FA90AD4'");
+                sb.AppendLine("if (Test-Path $key) { New-ItemProperty $key -Name ACSettingIndex -Value 0 -PropertyType DWord -Force | Out-Null }");
+                sb.AppendLine("gpupdate /force /target:computer | Out-Null");
+                File.WriteAllText(script, sb.ToString(), new UTF8Encoding(false));
+
+                var psi = new ProcessStartInfo("powershell.exe",
+                    "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"" + script + "\"");
+                psi.UseShellExecute = true;
+                psi.Verb = "runas";
+                psi.WindowStyle = ProcessWindowStyle.Hidden;
+
+                using (Process p = Process.Start(psi))
+                {
+                    if (!p.WaitForExit(90000))
+                    {
+                        try { p.Kill(); } catch { }
+                        msg = "提权任务超时，请手动再试一次";
+                        return false;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                msg = "未获得管理员授权：" + ex.Message;
+                return false;
+            }
+
+            if (!AcThresholdOk())
+            {
+                msg = "策略已写入，但系统尚未生效（可稍后重试）";
+                return false;
+            }
+            return true;
+        }
+
+        static bool AcThresholdOk()
+        {
+            try
+            {
+                using (RegistryKey k = Registry.LocalMachine.OpenSubKey(KeyPath))
+                {
+                    if (k == null) return true;
+                    object v = k.GetValue("ACSettingIndex");
+                    if (v == null) return true;
+                    return Convert.ToInt32(v) == 0;
+                }
+            }
+            catch { return false; }
+        }
+
         // 首次启用前把原始策略状态存下来，方便日后原样回滚
         public static void SaveBackup()
         {
             if (File.Exists(BackupPath)) return;
+            WriteBackup();
+        }
 
+        // 每次打开开关都记录当时的真实状态，保证“关闭时还原到打开前”
+        public static void SaveBackupForce()
+        {
+            WriteBackup();
+        }
+
+        static void WriteBackup()
+        {
             bool existed = false;
             string dc = "", ac = "";
             try
@@ -3768,7 +4410,8 @@ namespace BrightnessApp
             {
                 sb.AppendLine("New-Item $key -Force | Out-Null");
                 sb.AppendLine("New-ItemProperty $key -Name DCSettingIndex -Value 100 -PropertyType DWord -Force | Out-Null");
-                sb.AppendLine("New-ItemProperty $key -Name ACSettingIndex -Value 100 -PropertyType DWord -Force | Out-Null");
+                // 插电阈值必须保持 0：写成 100 会在插电时也强制节电模式，CPU 被锁在基频无法睿频
+                sb.AppendLine("New-ItemProperty $key -Name ACSettingIndex -Value 0 -PropertyType DWord -Force | Out-Null");
             }
             else
             {
