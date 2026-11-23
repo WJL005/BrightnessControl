@@ -1,8 +1,1 @@
-﻿# 亮度 100%
-$ErrorActionPreference = 'Stop'
-& "$PSScriptRoot\Set-Brightness.ps1" -Percent 100
-
-try {
-    $parent = Get-Process -Id (Get-CimInstance Win32_Process -Filter "ProcessId=$PID").ParentProcessId -ErrorAction Stop
-    if ($parent.ProcessName -eq 'explorer') { Write-Host ''; [void](Read-Host '按回车退出') }
-} catch { }
+77u/IyDkuq7luqYgMTAwJQokRXJyb3JBY3Rpb25QcmVmZXJlbmNlID0gJ1N0b3AnCiYgIiRQU1NjcmlwdFJvb3RcU2V0LUJyaWdodG5lc3MucHMxIiAtUGVyY2VudCAxMDAKCnRyeSB7CiAgICAkcGFyZW50ID0gR2V0LVByb2Nlc3MgLUlkIChHZXQtQ2ltSW5zdGFuY2UgV2luMzJfUHJvY2VzcyAtRmlsdGVyICJQcm9jZXNzSWQ9JFBJRCIpLlBhcmVudFByb2Nlc3NJZCAtRXJyb3JBY3Rpb24gU3RvcAogICAgaWYgKCRwYXJlbnQuUHJvY2Vzc05hbWUgLWVxICdleHBsb3JlcicpIHsgV3JpdGUtSG9zdCAnJzsgW3ZvaWRdKFJlYWQtSG9zdCAn5oyJ5Zue6L2m6YCA5Ye6JykgfQp9IGNhdGNoIHsgfQo=
