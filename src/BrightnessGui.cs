@@ -15,7 +15,7 @@ namespace BrightnessApp
 {
     static class Program
     {
-        public const string Version = "1.15";
+        public const string Version = "1.1.6";
 
         [STAThread]
         static void Main()
@@ -1434,6 +1434,9 @@ namespace BrightnessApp
         readonly CheckBox _chkAuto = new CheckBox();
         readonly ComboBox _logFilter = new ComboBox();
 
+        // 标签宽度按这个字体实测，保证右缘不会压到后面的下拉框边框
+        static readonly Font CaptionFont = PickFont();
+
         readonly ComboBox _plan = new ComboBox();
         readonly ComboBox _overlay = new ComboBox();
         readonly ComboBox _acOff = new ComboBox();
@@ -1555,11 +1558,58 @@ namespace BrightnessApp
                 {
                     // DropDownWidth 就是展开列表的窗口宽度，与控件同宽即完全对齐
                     try { cb.DropDownWidth = cb.Width; } catch { }
+                    StyleCombo(cb);
                 }
                 else
                 {
                     FixComboDropDown(c);
                 }
+            }
+        }
+
+        // 本机主题把 DropDownList 的闭合框画成浅灰底（像被禁用），这里改成自绘白底，
+        // 文字垂直居中，禁用时才用浅灰底 + 灰字。
+        static void StyleCombo(ComboBox cb)
+        {
+            cb.DrawMode = DrawMode.OwnerDrawFixed;
+            cb.DrawItem -= ComboDrawItem;
+            cb.DrawItem += ComboDrawItem;
+        }
+
+        static void ComboDrawItem(object sender, DrawItemEventArgs e)
+        {
+            ComboBox cb = sender as ComboBox;
+            if (cb == null) return;
+
+            bool onEdit = (e.State & DrawItemState.ComboBoxEdit) == DrawItemState.ComboBoxEdit;
+            bool disabled = !cb.Enabled;
+            bool selected = !onEdit && (e.State & DrawItemState.Selected) == DrawItemState.Selected;
+
+            Color back = Color.White;
+            if (disabled) back = Color.FromArgb(243, 243, 243);
+            else if (selected) back = Color.FromArgb(204, 228, 247);
+
+            using (var brush = new SolidBrush(back))
+                e.Graphics.FillRectangle(brush, e.Bounds);
+
+            if (e.Index >= 0 && e.Index < cb.Items.Count)
+            {
+                string text = cb.GetItemText(cb.Items[e.Index]);
+                Color fore = disabled ? Color.FromArgb(150, 150, 155) : Color.FromArgb(32, 32, 32);
+                // 闭合框里 e.Bounds 已经把箭头区域挖掉了，窄框放不下「80%」「15 分钟」这类文字，
+                // 所以闭合状态按控件整宽留白，展开列表沿用条目自己的宽度。
+                int avail = onEdit ? Math.Max(6, cb.ClientSize.Width - 8) : Math.Max(6, e.Bounds.Width - 3);
+                Rectangle box = new Rectangle(e.Bounds.X + 3, e.Bounds.Y, avail, e.Bounds.Height);
+                TextRenderer.DrawText(e.Graphics, text, cb.Font, box, fore,
+                    TextFormatFlags.Left | TextFormatFlags.VerticalCenter
+                    | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
+            }
+
+            if (!onEdit && !disabled
+                && (e.State & DrawItemState.Focus) == DrawItemState.Focus
+                && (e.State & DrawItemState.NoFocusRect) == 0)
+            {
+                e.DrawFocusRectangle();
             }
         }
 
@@ -1843,15 +1893,15 @@ namespace BrightnessApp
 
         Control BuildPowerPanel()
         {
-            var gb = new GroupBox { Text = "电源与插电设置（修改前自动备份，可一键撤销）", Dock = DockStyle.Fill };
+            var gb = new GroupBox { Text = "电源与插电设置（修改前自动备份，可一键撤销）", Dock = DockStyle.Fill, Font = Font };
 
             AddCaption(gb, "电源计划", 12, 28);
-            _plan.SetBounds(74, 24, 190, 26);
+            _plan.SetBounds(74, 24, 190, 24);
             _plan.DropDownStyle = ComboBoxStyle.DropDownList;
             gb.Controls.Add(_plan);
 
             AddCaption(gb, "电源模式", 274, 28);
-            _overlay.SetBounds(336, 24, 150, 26);
+            _overlay.SetBounds(336, 24, 150, 24);
             _overlay.DropDownStyle = ComboBoxStyle.DropDownList;
             _overlay.Items.AddRange(new object[] { "节电模式", "平衡（默认）", "更好的性能" });
             _overlay.SelectedIndex = 0;
@@ -2070,8 +2120,16 @@ namespace BrightnessApp
                 AutoSize = false,
                 TextAlign = ContentAlignment.MiddleLeft
             };
-            lb.SetBounds(x, y, text.Length * 16 + 6, 20);
+            lb.SetBounds(x, y, CaptionTextWidth(text), 20);
             parent.Controls.Add(lb);
+        }
+
+        // 旧的「字数×16」估算会把标签撑得比文字宽很多，右缘压到下拉框边框上
+        static int CaptionTextWidth(string text)
+        {
+            int w = TextRenderer.MeasureText(text, CaptionFont, new Size(int.MaxValue, 20),
+                TextFormatFlags.NoPadding).Width;
+            return w + 8;
         }
 
         static void InitTime(Control parent, ComboBox box, int x, int y)

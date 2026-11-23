@@ -2,6 +2,15 @@
 
 本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.1.6] - 2026-11-23
+
+程序内部版本号与发布号统一为 1.1.6。
+
+### 改进
+- 下拉框改为自绘样式：修正部分系统主题下「闭合框呈浅灰底、看似被禁用」的问题，白底显示、文字垂直居中，禁用时才用浅灰底灰字。
+- 电源设置区的字段标题宽度改为按字体实测，避免文字标签挤占右侧下拉框边框。
+- 统一电源面板字体，微调下拉框高度与对齐。
+
 ## [1.1.5] - 2026-11-23
 
 对应程序内部版本号 1.15。
@@ -35,6 +44,7 @@
 - `build.bat` 一键编译 GUI 与 CLI 两个版本。
 - 脱敏处理：移除本机用户名、机器名、显示器型号与私有路径，提供脱敏日志示例。
 
+[1.1.6]: https://github.com/WJL005/BrightnessControl/releases/tag/v1.1.6
 [1.1.5]: https://github.com/WJL005/BrightnessControl/releases/tag/v1.1.5
 [1.1.0]: https://github.com/WJL005/BrightnessControl/releases/tag/v1.1.0
 [1.0.0]: https://github.com/WJL005/BrightnessControl/releases/tag/v1.0.0
