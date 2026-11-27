@@ -15,7 +15,7 @@ namespace BrightnessApp
 {
     static class Program
     {
-        public const string Version = "1.3.3";
+        public const string Version = "1.5.1";
         public const string AppName = "屏亮管家";
 
         [STAThread]
@@ -1774,6 +1774,175 @@ namespace BrightnessApp
         }
     }
 
+    // ── 一键模式的进度窗与执行器 ─────────────────────────────
+    // work：在后台线程执行的系统改动；step：报告当前步骤文案
+    delegate void ModeWork(List<string> errs, Action<string> step);
+    delegate void ModeFinish(List<string> errs);
+
+    class ModeProgressForm : Form
+    {
+        readonly Label _lblTitle = new Label();
+        readonly Label _lblStep = new Label();
+        readonly Label _lblClock = new Label();
+        readonly Label _lblHint = new Label();
+        readonly ProgressBar _bar = new ProgressBar();
+        readonly Timer _timer = new Timer();
+        readonly int _total;
+        int _done;
+        int _elapsed;
+        bool _allowClose;
+
+        public ModeProgressForm(string title, int totalSteps)
+        {
+            _total = Math.Max(1, totalSteps);
+
+            FormBorderStyle = FormBorderStyle.None;
+            StartPosition = FormStartPosition.CenterParent;
+            ShowInTaskbar = false;
+            TopMost = true;
+            BackColor = Color.White;
+            ClientSize = new Size(404, 196);
+            Font = new Font("Microsoft YaHei UI", 9F);
+
+            var head = new Panel { BackColor = Color.FromArgb(240, 246, 253), Dock = DockStyle.Top, Height = 50 };
+            _lblTitle.Text = title;
+            _lblTitle.Font = new Font(Font.FontFamily, 11.5F, FontStyle.Bold);
+            _lblTitle.ForeColor = Color.FromArgb(20, 70, 130);
+            _lblTitle.SetBounds(16, 14, 372, 24);
+            head.Controls.Add(_lblTitle);
+            Controls.Add(head);
+
+            _lblStep.Text = "正在准备，请稍候…";
+            _lblStep.SetBounds(16, 62, 372, 20);
+            Controls.Add(_lblStep);
+
+            _bar.SetBounds(16, 88, 372, 16);
+            _bar.Minimum = 0;
+            _bar.Maximum = 100;
+            _bar.Style = ProgressBarStyle.Continuous;
+            Controls.Add(_bar);
+
+            _lblClock.SetBounds(16, 112, 372, 20);
+            _lblClock.ForeColor = Color.FromArgb(34, 92, 150);
+            Controls.Add(_lblClock);
+
+            _lblHint.Text = "正在修改系统电源设置，期间界面可能轻微卡顿，请勿重复点击。";
+            _lblHint.SetBounds(16, 140, 372, 20);
+            _lblHint.ForeColor = Color.Gray;
+            Controls.Add(_lblHint);
+
+            _timer.Interval = 1000;
+            _timer.Tick += delegate { _elapsed++; UpdateClock(); };
+            Shown += delegate { UpdateClock(); _timer.Start(); };
+            UpdateClock();
+        }
+
+        // 供自检使用
+        internal string StepText { get { return _lblStep.Text; } }
+        internal string ClockText { get { return _lblClock.Text; } }
+        internal int BarValue { get { return _bar.Value; } }
+
+        void UpdateClock()
+        {
+            if (_elapsed <= 10)
+                _lblClock.Text = "已等待 " + _elapsed + " 秒 · 预计还需 " + (10 - _elapsed) + " 秒";
+            else
+                _lblClock.Text = "已等待 " + _elapsed + " 秒 · 正在收尾，请再稍等…";
+        }
+
+        public void StepForward(string text)
+        {
+            _done++;
+            if (_done > _total) _done = _total;
+            _lblStep.Text = "（" + _done + "/" + _total + "）" + text;
+            int pct = (int)Math.Round(100.0 * _done / _total);
+            if (pct > _bar.Value) _bar.Value = Math.Min(100, pct);
+        }
+
+        public void FinishNow()
+        {
+            _timer.Stop();
+            _allowClose = true;
+            try { _bar.Value = 100; } catch { }
+            Close();
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
+            using (var p = new Pen(Color.FromArgb(122, 162, 206)))
+                e.Graphics.DrawRectangle(p, 0, 0, Width - 1, Height - 1);
+        }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            if (!_allowClose) { e.Cancel = true; return; }
+            base.OnFormClosing(e);
+        }
+
+        // 执行期间屏蔽 Esc / Alt+F4，避免用户中途关掉对话框
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            return true;
+        }
+    }
+
+    static class ModeRunner
+    {
+        public static string ConfirmText(bool perf)
+        {
+            if (perf)
+                return "即将「释放全部性能」。\r\n\r\n"
+                     + "整个过程大约需要 10 秒：程序要逐项修改电源模式、处理器上限、散热策略和节电设置，"
+                     + "期间鼠标和界面可能短暂卡顿，这是正常现象，请不要重复点击。\r\n\r\n"
+                     + "完成后会弹窗告诉你结果。\r\n\r\n是否现在开始？";
+            return "即将开启「超级节能」。\r\n\r\n"
+                 + "整个过程大约需要 10 秒：程序要逐项修改电源计划、处理器上限、散热策略、睿频和节电设置，"
+                 + "期间鼠标和界面可能短暂卡顿，这是正常现象，请不要重复点击。\r\n\r\n"
+                 + "完成后会弹窗告诉你结果。\r\n\r\n是否现在开始？";
+        }
+
+        // 显示进度窗 → 后台线程执行 work → 关闭进度窗 → 回到界面线程执行 finish
+        public static void Run(IWin32Window owner, string title, int totalSteps, ModeWork work, ModeFinish finish)
+        {
+            var errs = new List<string>();
+            using (var dlg = new ModeProgressForm(title, totalSteps))
+            {
+                var ready = new System.Threading.ManualResetEvent(false);
+                dlg.Shown += delegate { ready.Set(); };
+
+                var th = new System.Threading.Thread(delegate()
+                {
+                    try
+                    {
+                        ready.WaitOne();
+                        work(errs, delegate(string text)
+                        {
+                            try { dlg.BeginInvoke(new Action(delegate { dlg.StepForward(text); })); }
+                            catch { }
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        errs.Add(ex.Message);
+                    }
+                    finally
+                    {
+                        try { dlg.BeginInvoke(new Action(delegate { dlg.FinishNow(); })); }
+                        catch { }
+                    }
+                });
+                th.IsBackground = true;
+                th.Start();
+
+                dlg.ShowDialog(owner);
+                th.Join(3000);
+            }
+
+            finish(errs);
+        }
+    }
+
     // ── 主窗口 ───────────────────────────────────────────────
     class MainForm : Form
     {
@@ -2029,13 +2198,12 @@ namespace BrightnessApp
             _pageHost.Padding = new Padding(12, 10, 12, 10);
             _pageHost.BackColor = Color.FromArgb(250, 250, 252);
 
-            _pages = new Panel[6];
-            _pages[0] = MakePage(BuildBrightnessPage());
-            _pages[1] = MakePage(BuildPowerPanel());
-            _pages[2] = MakePage(BuildUnleashPanel());
-            _pages[3] = MakePage(BuildStatusPage());
-            _pages[4] = MakePage(BuildLogPanel());
-            _pages[5] = MakePage(BuildSettingsPage());
+            _pages = new Panel[5];
+            _pages[0] = MakePage(BuildQuickPage());
+            _pages[1] = MakePage(BuildBrightnessPage());
+            _pages[2] = MakePage(BuildPowerPanel());
+            _pages[3] = MakePage(BuildLogPanel());
+            _pages[4] = MakePage(BuildSettingsPage());
             foreach (Panel p in _pages)
             {
                 p.Visible = false;
@@ -2083,10 +2251,9 @@ namespace BrightnessApp
 
             string[,] items = new string[,]
             {
+                { "\uE945", "快速设置" },
                 { "\uE706", "亮度" },
                 { "\uE7E8", "电源" },
-                { "\uE945", "一键模式" },
-                { "\uE946", "状态" },
                 { "\uE81C", "日志" },
                 { "\uE713", "设置" }
             };
@@ -2251,11 +2418,11 @@ namespace BrightnessApp
 
             var l3 = new Label
             {
-                Text = "「两块屏一起调」开关在「亮度」页；插拔自动锁定在「电源」页。",
+                Text = "「两块屏一起调」开关在「亮度」页；插拔自动锁定在「电源」页；一键模式和系统状态都在首页「快速设置」。",
                 AutoSize = false,
                 ForeColor = Color.Gray
             };
-            l3.SetBounds(18, 128, 600, 22);
+            l3.SetBounds(18, 128, 640, 22);
 
             var cap = new Label
             {
@@ -2287,11 +2454,38 @@ namespace BrightnessApp
             return gb;
         }
 
-        // 状态页：顶部诊断动作 + 系统状态表
-        Control BuildStatusPage()
+        // 快速设置：一键模式（顶部）+ 系统状态（下方），由原「一键模式」「状态」两页合并
+        Control BuildQuickPage()
         {
             var page = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
 
+            Control info = BuildInfoPanel();
+            page.Controls.Add(info);
+            page.Controls.Add(BuildStatusBar());
+
+            var tip = new Label
+            {
+                Text = "两个开关互斥，开一个会自动关掉另一个；关闭时还原到打开前的状态。\r\n"
+                     + "释放全部性能：处理器 100%、散热主动、关闭插电节电。\r\n"
+                     + "超级节能：处理器限 30%、散热被动、关闭睿频，插电和电池都锁最省电。\r\n"
+                     + "点击后大约需要 10 秒生效，期间会弹出进度窗并显示倒计时，请勿重复点击。",
+                ForeColor = Color.Gray,
+                AutoSize = false,
+                TextAlign = ContentAlignment.TopLeft,
+                Padding = new Padding(2, 0, 0, 0),
+                Dock = DockStyle.Top,
+                Height = 68
+            };
+            Tip(tip, "散热主动 / 被动：Windows 的散热策略。主动＝优先提高风扇转速再降频；被动＝尽量不加速风扇，先降频。\r\n睿频（Turbo Boost）：CPU 在功耗和温度允许时自动超出标称频率运行，关闭后峰值性能下降，但更省电、更凉。");
+            page.Controls.Add(tip);
+
+            page.Controls.Add(BuildModeToggles());
+            return page;
+        }
+
+        // 快速设置页顶部的诊断动作条（原状态页的按钮）
+        Control BuildStatusBar()
+        {
             var bar = new FlowLayoutPanel
             {
                 Dock = DockStyle.Top,
@@ -2300,6 +2494,8 @@ namespace BrightnessApp
                 WrapContents = false,
                 Padding = new Padding(2, 8, 0, 0)
             };
+            var bVbOff = MakeButton("关闭 Vari-Bright（释放性能）", 208, (s, e) => RunFix("-Target VariBright -Apply"));
+            var bVbOn = MakeButton("恢复 Vari-Bright（开启节能）", 208, (s, e) => RunFix("-Target VariBright -Restore -Apply"));
             var bRefresh = MakeButton("刷新全部", 96, (s, e) =>
             {
                 _retryLeft = 3;
@@ -2309,23 +2505,17 @@ namespace BrightnessApp
                 LoadLogs();
             });
             var bReport = MakeButton("导出诊断报告", 120, (s, e) => ExportReport());
-            var bVbOff = MakeButton("关闭 Vari-Bright", 128, (s, e) => RunFix("-Target VariBright -Apply"));
-            var bVbOn = MakeButton("恢复 Vari-Bright", 128, (s, e) => RunFix("-Target VariBright -Restore -Apply"));
 
             Tip(bRefresh, "重新读取屏幕、亮度、电源方案、CPU 频率/占用等信息，并刷新日志列表。");
             Tip(bReport, "把当前系统状态和最近操作记录导出成 txt 并自动打开，便于排查问题。\r\n报告里不含计算机名和用户名。");
-            Tip(bVbOff, "Vari-Bright 是 AMD 显卡的省电显示技术：在电池或普通画面下自动降低背光电流、压低对比度来省电，副作用是画面偏灰、偏暗、色彩变淡。\r\n\r\n「关闭 Vari-Bright」会把它的等级设为 0，不再自动压暗画面；画面会更亮更准，但耗电略增。\r\n\r\n修改需要管理员权限，程序会先备份原值，可用「恢复 Vari-Bright」还原。");
-            Tip(bVbOn, "把 Vari-Bright 恢复到修改前的等级（通常是出厂默认的开启状态）。\r\n\r\n开启后系统会继续按功耗/画面内容自动压暗背光，以换取更长的电池续航。");
+            Tip(bVbOff, "关闭 Vari-Bright，释放性能：把等级设为 0，不再自动压暗画面。\r\n画面更亮、更准，对比度更好，适合看图、看视频、做设计；代价是耗电略增。\r\n\r\n修改需要管理员权限，程序会先备份原值，可用「恢复 Vari-Bright（开启节能）」还原。");
+            Tip(bVbOn, "恢复 Vari-Bright，开启节能：把等级恢复到修改前（通常是出厂默认的开启状态）。\r\n系统会按功耗和画面内容自动降低背光电流、压低对比度，更省电；副作用是画面偏灰、偏暗、色彩变淡。");
 
-            bar.Controls.Add(bRefresh);
-            bar.Controls.Add(bReport);
             bar.Controls.Add(bVbOff);
             bar.Controls.Add(bVbOn);
-
-            Control info = BuildInfoPanel();
-            page.Controls.Add(info);
-            page.Controls.Add(bar);
-            return page;
+            bar.Controls.Add(bRefresh);
+            bar.Controls.Add(bReport);
+            return bar;
         }
 
         Control BuildTopPanel()
@@ -2504,10 +2694,10 @@ namespace BrightnessApp
             return 2;
         }
 
-        // 并排两个大号滑动开关：左=ON，右=OFF；两者互斥
-        Control BuildUnleashPanel()
+        // 并排两个大号滑动开关：左=ON，右=OFF；两者互斥（快速设置页顶部）
+        Control BuildModeToggles()
         {
-            var panel = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent };
+            var panel = new Panel { Dock = DockStyle.Top, Height = 72 };
 
             _tgPerf.Title = "释放全部性能";
             _tgPerf.SubOn = "已开启 · 插电不限频";
@@ -2522,20 +2712,8 @@ namespace BrightnessApp
             panel.Controls.Add(_tgPerf);
             panel.Controls.Add(_tgSaver);
 
-            var tip = new Label
-            {
-                Text = "两个开关互斥，开一个会自动关掉另一个；关闭时还原到打开前的状态。\r\n"
-                     + "释放全部性能：处理器 100%、散热主动、关闭插电节电。\r\n"
-                     + "超级节能：处理器限 30%、散热被动、关闭睿频，插电和电池都锁最省电。",
-                ForeColor = Color.Gray,
-                AutoSize = false,
-                TextAlign = ContentAlignment.TopLeft
-            };
-            panel.Controls.Add(tip);
-
             Tip(_tgPerf, "释放全部性能（会先备份当前设置，关闭开关即还原）：\r\n• 最小/最大处理器状态都设为 100%，不降频\r\n• 散热方式设为「主动」：风扇更积极\r\n• 睿频策略恢复为允许加速\r\n• 关闭插电时的节电模式限制\r\n适合插电做重活；更耗电、更热、风扇更响。");
             Tip(_tgSaver, "超级节能（会先备份当前设置，关闭开关即还原）：\r\n• 最大处理器状态限制为 30%，最小 5%\r\n• 散热方式设为「被动」：尽量不加速风扇，先降频\r\n• 关闭睿频（Turbo Boost），不让 CPU 临时超频\r\n• 插电和电池都锁定最省电的电源模式\r\n适合长时间离电使用，性能会明显下降。");
-            Tip(tip, "散热主动 / 被动：Windows 的散热策略。主动＝优先提高风扇转速再降频；被动＝尽量不加速风扇，先降频。\r\n睿频（Turbo Boost）：CPU 在功耗和温度允许时自动超出标称频率运行，关闭后峰值性能下降，但更省电、更凉。");
 
             panel.Resize += (s, e) =>
             {
@@ -2543,7 +2721,6 @@ namespace BrightnessApp
                 int w = Math.Max(240, (panel.ClientSize.Width - gap) / 2);
                 _tgPerf.SetBounds(0, 0, w, 72);
                 _tgSaver.SetBounds(w + gap, 0, w, 72);
-                tip.SetBounds(2, 86, panel.ClientSize.Width - 4, 66);
             };
 
             return panel;
@@ -2552,98 +2729,165 @@ namespace BrightnessApp
         void OnModeToggled(PowerToggle src, bool perf)
         {
             if (_modeSyncing) return;
-            if (src.Checked) SetMode(perf);
-            else RestoreMode();
+            if (src.Checked) BeginSetMode(perf);
+            else BeginRestoreMode();
         }
 
-        // 打开某个模式：先关掉另一个（会还原），再备份当前状态并应用
-        void SetMode(bool perf)
+        // 打开某个模式：先提示约 10 秒的等待，再后台执行并显示进度，完成后弹窗告知结果
+        void BeginSetMode(bool perf)
         {
-            _modeSyncing = true;
-            try
+            PowerToggle self = perf ? _tgPerf : _tgSaver;
+            string name = perf ? "释放全部性能" : "超级节能";
+
+            DialogResult ans = MessageBox.Show(this, ModeRunner.ConfirmText(perf), "开启" + name + "？",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1);
+            if (ans != DialogResult.Yes)
             {
-                if (perf)
-                {
-                    if (_tgSaver.Checked) RestoreModeCore();
-                    ApplyPerformance();
-                }
-                else
-                {
-                    if (_tgPerf.Checked) RestoreModeCore();
-                    ApplySaver();
-                }
+                // 用户取消：把开关静默拨回去，保持与系统实际状态一致
+                _modeSyncing = true;
+                try { self.SetCheckedSilent(false); }
+                finally { _modeSyncing = false; }
+                return;
             }
-            finally
+
+            bool fromOther = perf ? _tgSaver.Checked : _tgPerf.Checked;
+            int steps = (perf ? 7 : 11) + (fromOther ? 7 : 0);
+
+            ModeRunner.Run(this, perf ? "正在释放全部性能" : "正在开启超级节能", steps,
+                delegate(List<string> errs, Action<string> step)
+                {
+                    if (fromOther)
+                    {
+                        step("先还原上一个模式");
+                        RestoreModeWork(errs, step);
+                    }
+                    if (perf) ApplyPerformanceWork(errs, step);
+                    else ApplySaverWork(errs, step);
+                },
+                delegate(List<string> errs)
+                {
+                    _powerState = PowerCtl.Read();
+                    UiFile.Set("mode", perf ? "perf" : "saver");
+                    RefreshPowerUi();
+                    RefreshStatus();
+                    RefreshModeToggles();
+                    LoadLogs();
+                    ShowModeResult(perf, errs);
+                });
+        }
+
+        // 关闭开关：还原到打开前的备份（同样显示进度窗）
+        void BeginRestoreMode()
+        {
+            if (PowerCtl.LoadSnapshot() == null)
             {
-                _modeSyncing = false;
-                RefreshModeToggles();
+                _modeSyncing = true;
+                try
+                {
+                    _tgPerf.SetCheckedSilent(false);
+                    _tgSaver.SetCheckedSilent(false);
+                }
+                finally { _modeSyncing = false; }
+                MessageBox.Show(this, "没找到打开前的备份，未做还原。", "还原",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            ModeRunner.Run(this, "正在还原到打开前的状态", 6,
+                delegate(List<string> errs, Action<string> step) { RestoreModeWork(errs, step); },
+                delegate(List<string> errs)
+                {
+                    _tgPerf.SetCheckedSilent(false);
+                    _tgSaver.SetCheckedSilent(false);
+                    UiFile.Set("mode", "");
+                    _powerState = PowerCtl.Read();
+                    RefreshPowerUi();
+                    RefreshStatus();
+                    RefreshModeToggles();
+                    LogStore.Write("CONFIG", "mode=off: " + (errs.Count == 0 ? "OK" : string.Join(";", errs.ToArray())));
+                    LoadLogs();
+
+                    if (errs.Count == 0)
+                        MessageBox.Show(this, "已关闭，并还原到打开前的状态。", "已完成",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    else
+                    {
+                        string bad = "已关闭，部分还原失败：" + string.Join("；", errs.ToArray());
+                        ShowPowerMsg(bad, true);
+                        MessageBox.Show(this, bad, "部分完成", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                });
+        }
+
+        // 执行完毕：更新界面并弹窗告知结果
+        void ShowModeResult(bool perf, List<string> errs)
+        {
+            string ok = perf
+                ? "已释放全部性能：处理器不再降频、散热主动、插电节电已关闭。\r\n\r\n适合插电做重活，会更耗电，发热和风扇噪音也会增加。"
+                : "超级节能已开启：插电和电池都锁定最省电（处理器 30%、被动散热、关闭睿频）。\r\n\r\n性能会明显下降，但更省电、机器更凉。";
+
+            if (errs.Count > 0)
+            {
+                string tail = PowerCtl.IsAdmin() ? "" : "；可点『以管理员身份重启』再试";
+                string bad = "部分改动没成功：" + string.Join("；", errs.ToArray()) + tail;
+                ShowPowerMsg(bad, true);
+                _btnElevate.Visible = true;
+                MessageBox.Show(this, bad + "\r\n\r\n" + ok, "部分完成", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            else
+            {
+                ShowPowerMsg(perf ? "已释放全部性能：不上限、散热主动、插电节电已关闭。"
+                                  : "超级节能已开启：插电和电池都锁定最省电（30% + 被动散热 + 关睿频）。", false);
+                MessageBox.Show(this, ok, "已完成", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 
-        void RestoreMode()
-        {
-            if (_modeSyncing) return;
-            _modeSyncing = true;
-            try { RestoreModeCore(); }
-            finally
-            {
-                _modeSyncing = false;
-                RefreshModeToggles();
-            }
-        }
+        // —— 以下 Work 方法只做系统改动与写日志，不碰界面控件，可在后台线程执行 ——
 
         // 释放全部性能：插电不限频、散热主动、关掉插电节电
-        void ApplyPerformance()
+        void ApplyPerformanceWork(List<string> errs, Action<string> step)
         {
             PowerState now = PowerCtl.Read();
-            _powerState = now;
             try { PowerCtl.SaveSnapshot(now); } catch { }
             LogStore.Write("CONFIG", "mode=perf: overlay=maxperf mincpu=100 maxcpu=100 cooling=active saverAc=off");
 
-            var errs = new List<string>();
             string err;
 
+            step("备份当前设置并切换为「更好的性能」");
             if (!PowerCtl.SetOverlay(PowerCtl.OverlayMaxPerf, out err)) errs.Add("电源模式：" + err);
+
+            step("设置最小处理器状态为 100%");
             if (!PowerCtl.SetMinCpu(true, 100, out err)) errs.Add("最小处理器：" + err);
+
+            step("设置最大处理器状态为 100%");
             if (!PowerCtl.SetMaxCpu(true, 100, out err)) errs.Add("最大处理器：" + err);
+
+            step("把散热方式改为「主动」");
             if (!PowerCtl.SetCooling(true, 1, out err)) errs.Add("散热方式：" + err);
+
+            step("恢复睿频加速");
             if (!PowerCtl.SetBoostMode(true, 2, out err)) errs.Add("睿频策略：" + err);
 
             // 关键：插电若被“节电模式”强制开启，CPU 会被锁在基频、完全没有睿频
+            step("关闭插电时的节电限制");
             SaverPolicy.SaveBackupForce();
             string saverMsg;
             if (!SaverPolicy.AllowPluggedIn(out saverMsg)) errs.Add("插电节电限制：" + saverMsg);
 
+            step("让系统立即生效");
             PowerCtl.Activate(out err);
-
-            _powerSyncing = true;
-            try
-            {
-                _overlay.SelectedIndex = 2;
-                _acMaxCpu.SelectedIndex = FindCpuIndex(100);
-            }
-            finally { _powerSyncing = false; }
-
-            _powerState = PowerCtl.Read();
-            RefreshPowerUi();
-            RefreshStatus();
-            UiFile.Set("mode", "perf");
-            RefreshModeToggles();
-            ReportModeResult("已释放全部性能：不上限、散热主动、插电节电已关闭。", errs);
-            LoadLogs();
         }
 
         // 超级节能：插电/电池都锁最省
-        void ApplySaver()
+        void ApplySaverWork(List<string> errs, Action<string> step)
         {
             PowerState now = PowerCtl.Read();
-            _powerState = now;
             try { PowerCtl.SaveSnapshot(now); } catch { }
 
-            var errs = new List<string>();
             string err;
 
             // 有「超级节能」方案就切过去，再逐项压实
+            step("切换电源计划为「超级节能」");
             PowerScheme target = null;
             foreach (PowerScheme ps in PowerCtl.ListSchemes())
                 if (ps.Name != null && ps.Name.IndexOf("超级节能") >= 0) { target = ps; break; }
@@ -2652,63 +2896,53 @@ namespace BrightnessApp
                 if (!PowerCtl.SetScheme(target.Guid, out err)) errs.Add("电源计划：" + err);
             }
 
+            step("电源模式切换为「节电模式」");
             if (!PowerCtl.SetOverlay(PowerCtl.OverlayBattery, out err)) errs.Add("电源模式：" + err);
 
             bool admin = PowerCtl.IsAdmin();
+            step("插电：最大处理器 30%");
             if (!PowerCtl.SetMaxCpu(true, 30, out err) && admin) errs.Add("插电·最大处理器：" + err);
+            step("插电：最小处理器 5%");
             if (!PowerCtl.SetMinCpu(true, 5, out err) && admin) errs.Add("插电·最小处理器：" + err);
+            step("插电：散热方式改为被动");
             if (!PowerCtl.SetCooling(true, 0, out err) && admin) errs.Add("插电·散热方式：" + err);
+            step("插电：关闭睿频");
             if (!PowerCtl.SetBoostMode(true, 0, out err) && admin) errs.Add("插电·睿频：" + err);
+            step("电池：最大处理器 30%");
             if (!PowerCtl.SetMaxCpu(false, 30, out err) && admin) errs.Add("电池·最大处理器：" + err);
+            step("电池：最小处理器 5%");
             if (!PowerCtl.SetMinCpu(false, 5, out err) && admin) errs.Add("电池·最小处理器：" + err);
+            step("电池：散热方式改为被动");
             if (!PowerCtl.SetCooling(false, 0, out err) && admin) errs.Add("电池·散热方式：" + err);
+            step("电池：关闭睿频");
             if (!PowerCtl.SetBoostMode(false, 0, out err) && admin) errs.Add("电池·睿频：" + err);
 
             // 插电、电池都强制开启节电模式
+            step("插电和电池都开启节电模式");
             SaverPolicy.SaveBackupForce();
             string saverMsg;
             if (!SaverPolicy.ForceAlwaysOn(out saverMsg)) errs.Add("节电模式：" + saverMsg);
 
+            step("让系统立即生效");
             PowerCtl.Activate(out err);
-
-            _powerSyncing = true;
-            try
-            {
-                _overlay.SelectedIndex = 0;
-                _acMaxCpu.SelectedIndex = FindCpuIndex(30);
-            }
-            finally { _powerSyncing = false; }
-
-            _powerState = PowerCtl.Read();
-            RefreshPowerUi();
-            RefreshStatus();
-            UiFile.Set("mode", "saver");
-            RefreshModeToggles();
             LogStore.Write("CONFIG", "mode=saver: maxcpu=30 cooling=passive boost=off saver=always");
-            ReportModeResult("超级节能已开启：插电和电池都锁定最省电（30% + 被动散热 + 关睿频）。", errs);
-            LoadLogs();
         }
 
-        // 关掉开关：还原到打开前的备份
-        void RestoreModeCore()
+        // 还原到打开前的备份（不碰界面，可在后台线程执行）
+        bool RestoreModeWork(List<string> errs, Action<string> step)
         {
             PowerState snap = PowerCtl.LoadSnapshot();
-            if (snap == null)
-            {
-                _tgPerf.SetCheckedSilent(false);
-                _tgSaver.SetCheckedSilent(false);
-                ShowPowerMsg("没找到打开前的备份，未做还原。", true);
-                return;
-            }
+            if (snap == null) return false;
 
-            var errs = new List<string>();
             string err;
             bool online = PowerCtl.OnAc();
+            bool admin = PowerCtl.IsAdmin();
 
+            step("还原电源计划");
             if (!string.IsNullOrEmpty(snap.SchemeGuid) && !PowerCtl.SetScheme(snap.SchemeGuid, out err)) errs.Add("电源计划：" + err);
 
             // 一路还原 AC 与 DC，避免插拔后状态不一致
-            bool admin = PowerCtl.IsAdmin();
+            step("还原处理器与散热设置");
             if (snap.AcMaxCpu > 0 && !PowerCtl.SetMaxCpu(true, snap.AcMaxCpu, out err) && admin) errs.Add("插电·最大处理器：" + err);
             if (snap.AcMinCpu >= 0 && !PowerCtl.SetMinCpu(true, snap.AcMinCpu, out err) && admin) errs.Add("插电·最小处理器：" + err);
             if (snap.AcCooling >= 0 && !PowerCtl.SetCooling(true, snap.AcCooling, out err) && admin) errs.Add("插电·散热：" + err);
@@ -2718,40 +2952,23 @@ namespace BrightnessApp
             if (snap.DcCooling >= 0 && !PowerCtl.SetCooling(false, snap.DcCooling, out err) && admin) errs.Add("电池·散热：" + err);
             if (snap.DcBoost >= 0 && !PowerCtl.SetBoostMode(false, snap.DcBoost, out err) && admin) errs.Add("电池·睿频：" + err);
 
+            step("还原关屏与睡眠时间");
             if (snap.AcVideoIdle >= 0 && !PowerCtl.SetVideoIdle(true, snap.AcVideoIdle, out err)) errs.Add("插电·关屏：" + err);
             if (snap.AcStandbyIdle >= 0 && !PowerCtl.SetStandbyIdle(true, snap.AcStandbyIdle, out err)) errs.Add("插电·睡眠：" + err);
             if (snap.DcVideoIdle >= 0 && !PowerCtl.SetVideoIdle(false, snap.DcVideoIdle, out err)) errs.Add("电池·关屏：" + err);
             if (snap.DcStandbyIdle >= 0 && !PowerCtl.SetStandbyIdle(false, snap.DcStandbyIdle, out err)) errs.Add("电池·睡眠：" + err);
 
+            step("还原电源模式");
             if (!PowerCtl.SetOverlay(online ? snap.AcOverlay : snap.DcOverlay, out err)) errs.Add("电源模式：" + err);
 
             // 节电策略按打开前的备份还原
+            step("还原节电模式");
             string saverMsg;
             if (!SaverPolicy.RestoreBackup(out saverMsg)) errs.Add("节电模式：" + saverMsg);
 
+            step("让系统立即生效");
             PowerCtl.Activate(out err);
-
-            _tgPerf.SetCheckedSilent(false);
-            _tgSaver.SetCheckedSilent(false);
-            UiFile.Set("mode", "");
-
-            _powerState = PowerCtl.Read();
-            RefreshPowerUi();
-            RefreshStatus();
-            LogStore.Write("CONFIG", "mode=off: " + (errs.Count == 0 ? "OK" : string.Join(";", errs.ToArray())));
-            ShowPowerMsg(errs.Count == 0 ? "已关闭，并还原到打开前的状态。" : ("已关闭，部分还原失败：" + string.Join("；", errs.ToArray())), errs.Count > 0);
-            LoadLogs();
-        }
-
-        void ReportModeResult(string okText, List<string> errs)
-        {
-            if (errs.Count > 0)
-            {
-                string tail = PowerCtl.IsAdmin() ? "" : "；可点『以管理员身份重启』再试";
-                ShowPowerMsg("部分改动没成功：" + string.Join("；", errs.ToArray()) + tail, true);
-                _btnElevate.Visible = true;
-            }
-            else ShowPowerMsg(okText, false);
+            return true;
         }
 
         // 依据系统实际状态点亮对应开关
