@@ -2,6 +2,32 @@
 
 本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.6.0] - 2026-11-28
+
+### 新增
+- 免 UAC 提权：首次切换模式时安装一个 SYSTEM 计划任务（仅这一次需要授权），之后写入节电策略由该任务完成，不再弹管理员授权窗口。
+- 后台任务只接受固定格式请求（`op=set/remove`、`ac/dc` 为 0~100 或 none），不执行任意命令；请求与结果放在 `ProgramData\BrightnessApp\io`。
+- 后台任务不可用或被拒绝安装时，自动回退到原来的逐次提权方式，功能不受影响。
+
+### 修复
+- 修正 `New-Item -Force` 会清空已存在注册表键的问题：改为仅在键不存在时创建，避免误删另一个阈值。
+
+## [1.5.5] - 2026-11-28
+
+### 优化
+- 两个模式互相切换时只弹 1 次管理员授权（原先「还原」和「开启」各弹一次）：过渡还原不再单独还原节电策略，由新模式一次性写入「插电阈值 0 + 电池阈值按备份还原」。
+- 亮度调节的日志附带耗时（`elapsed=xxx ms`），可以直接看出调亮度是否变慢。
+- 提权脚本统一走 `RunElevatedScript`：节电开关、还原、模式切换共用同一套 30 秒超时与失败日志。
+
+## [1.5.4] - 2026-11-28
+
+### 优化（依据 11-28 的真实耗时日志）
+- 节电策略的 `gpupdate` 改为后台执行，不再阻塞提权脚本退出：单次提权从 7~11 秒降到约 1~2 秒。
+- 两个模式互相切换时，过渡还原不再单独「立即生效」，改由新模式的收尾统一刷新，省掉一次 2~10 秒的 `powercfg` 激活。
+- 进度窗在 11~30 秒时显示「仍在处理，一般不超过 30 秒」，超过 30 秒才显示收尾提示。
+
+实测 1.5.3 开启超级节能总耗时 17.7 秒（还原节电策略约 7 秒 + 生效约 7 秒），1.5.4 预计降到 6~8 秒。
+
 ## [1.5.3] - 2026-11-28
 
 ### 改进
@@ -136,6 +162,9 @@
 - `build.bat` 一键编译 GUI 与 CLI 两个版本。
 - 脱敏处理：移除本机用户名、机器名、显示器型号与私有路径，提供脱敏日志示例。
 
+[1.6.0]: https://github.com/WJL005/BrightnessControl/releases/tag/v1.6.0
+[1.5.5]: https://github.com/WJL005/BrightnessControl/releases/tag/v1.5.5
+[1.5.4]: https://github.com/WJL005/BrightnessControl/releases/tag/v1.5.4
 [1.5.3]: https://github.com/WJL005/BrightnessControl/releases/tag/v1.5.3
 [1.5.2]: https://github.com/WJL005/BrightnessControl/releases/tag/v1.5.2
 [1.5.1]: https://github.com/WJL005/BrightnessControl/releases/tag/v1.5.1

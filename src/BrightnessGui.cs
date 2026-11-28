@@ -15,7 +15,7 @@ namespace BrightnessApp
 {
     static class Program
     {
-        public const string Version = "1.5.3";
+        public const string Version = "1.6.0";
         public const string AppName = "屏亮管家";
 
         [STAThread]
@@ -1850,6 +1850,8 @@ namespace BrightnessApp
         {
             if (_elapsed <= 10)
                 _lblClock.Text = "已等待 " + _elapsed + " 秒 · 预计还需 " + (10 - _elapsed) + " 秒";
+            else if (_elapsed <= 30)
+                _lblClock.Text = "已等待 " + _elapsed + " 秒 · 仍在处理，一般不超过 30 秒";
             else
                 _lblClock.Text = "已等待 " + _elapsed + " 秒 · 正在收尾，请再稍等…";
 
@@ -1902,13 +1904,22 @@ namespace BrightnessApp
                 return "即将「释放全部性能」。\r\n\r\n"
                      + "整个过程大约需要 10 秒：程序要逐项修改电源模式、处理器上限、散热策略和节电设置，"
                      + "期间鼠标和界面可能短暂卡顿，这是正常现象，请不要重复点击。\r\n\r\n"
-                     + "如果系统弹出管理员授权（UAC）窗口，请点「是」，否则会一直等待直到超时。\r\n\r\n"
+                     + UacHint() + "\r\n\r\n"
                      + "完成后会弹窗告诉你结果。\r\n\r\n是否现在开始？";
             return "即将开启「超级节能」。\r\n\r\n"
                  + "整个过程大约需要 10 秒：程序要逐项修改电源计划、处理器上限、散热策略、睿频和节电设置，"
                  + "期间鼠标和界面可能短暂卡顿，这是正常现象，请不要重复点击。\r\n\r\n"
-                 + "如果系统弹出管理员授权（UAC）窗口，请点「是」，否则会一直等待直到超时。\r\n\r\n"
+                 + UacHint() + "\r\n\r\n"
                  + "完成后会弹窗告诉你结果。\r\n\r\n是否现在开始？";
+        }
+
+        // 首次需要一次 UAC 安装后台任务，之后不再弹窗
+        static string UacHint()
+        {
+            if (PolicyRunner.IsInstalled())
+                return "免授权后台任务已就绪，整个过程不会弹出管理员授权窗口。";
+            return "首次使用会弹一次管理员授权（UAC），用于安装免授权后台任务，请点「是」；"
+                 + "安装完成后切换模式不再弹窗。若拒绝授权，本次会退回逐次授权的方式。";
         }
 
         // 显示进度窗 → 后台线程执行 work → 关闭进度窗 → 回到界面线程执行 finish
@@ -2783,7 +2794,7 @@ namespace BrightnessApp
             }
 
             bool fromOther = perf ? _tgSaver.Checked : _tgPerf.Checked;
-            int steps = (perf ? 7 : 11) + (fromOther ? 7 : 0);
+            int steps = (perf ? 7 : 11) + (fromOther ? 5 : 0);
 
             ModeRunner.Run(this, perf ? "正在释放全部性能" : "正在开启超级节能", steps,
                 delegate(List<string> errs, Action<string> step)
@@ -2791,7 +2802,7 @@ namespace BrightnessApp
                     if (fromOther)
                     {
                         step("先还原上一个模式");
-                        RestoreModeWork(errs, step);
+                        RestoreModeWork(errs, step, true);
                     }
                     if (perf) ApplyPerformanceWork(errs, step);
                     else ApplySaverWork(errs, step);
@@ -2827,7 +2838,7 @@ namespace BrightnessApp
             }
 
             ModeRunner.Run(this, "正在还原到打开前的状态", 6,
-                delegate(List<string> errs, Action<string> step) { RestoreModeWork(errs, step); },
+                delegate(List<string> errs, Action<string> step) { RestoreModeWork(errs, step, false); },
                 delegate(List<string> errs)
                 {
                     _tgPerf.SetCheckedSilent(false);
@@ -2962,7 +2973,8 @@ namespace BrightnessApp
         }
 
         // 还原到打开前的备份（不碰界面，可在后台线程执行）
-        bool RestoreModeWork(List<string> errs, Action<string> step)
+        // interim=true 表示只是切换模式前的过渡还原：跳过“立即生效”，由新模式的收尾统一生效
+        bool RestoreModeWork(List<string> errs, Action<string> step, bool interim)
         {
             PowerState snap = PowerCtl.LoadSnapshot();
             if (snap == null) return false;
@@ -2994,13 +3006,16 @@ namespace BrightnessApp
             step("还原电源模式");
             if (!PowerCtl.SetOverlay(online ? snap.AcOverlay : snap.DcOverlay, out err)) errs.Add("电源模式：" + err);
 
-            // 节电策略按打开前的备份还原
-            step("还原节电模式（如有管理员授权窗，请点「是」）");
-            string saverMsg;
-            if (!SaverPolicy.RestoreBackup(out saverMsg)) errs.Add("节电模式：" + saverMsg);
+            // 过渡还原时不动节电策略：新模式会一次性写入正确阈值，少弹一次 UAC、少一次 gpupdate
+            if (!interim)
+            {
+                step("还原节电模式（如有管理员授权窗，请点「是」）");
+                string saverMsg;
+                if (!SaverPolicy.RestoreBackup(out saverMsg)) errs.Add("节电模式：" + saverMsg);
 
-            step("让系统立即生效");
-            PowerCtl.Activate(out err);
+                step("让系统立即生效");
+                PowerCtl.Activate(out err);
+            }
             return true;
         }
 
@@ -4391,6 +4406,7 @@ namespace BrightnessApp
 
         bool ApplyOne(MonitorTarget t, int percent)
         {
+            var watch = System.Diagnostics.Stopwatch.StartNew();
             string tag = "target=" + t.Name + "; ";
 
             int before = -1;
@@ -4435,14 +4451,14 @@ namespace BrightnessApp
             }
 
             if (after < 0)
-                LogStore.Write("SET", string.Format("{0}req={1}; before={2}; after=read-failed; result=UNKNOWN",
-                    tag, percent, before));
+                LogStore.Write("SET", string.Format("{0}req={1}; before={2}; after=read-failed; result=UNKNOWN; elapsed={3}ms",
+                    tag, percent, before, watch.ElapsedMilliseconds));
             else if (after == percent)
-                LogStore.Write("SET", string.Format("{0}req={1}; before={2}; after={3}; result=OK",
-                    tag, percent, before, after));
+                LogStore.Write("SET", string.Format("{0}req={1}; before={2}; after={3}; result=OK; elapsed={4}ms",
+                    tag, percent, before, after, watch.ElapsedMilliseconds));
             else
-                LogStore.Write("SET", string.Format("{0}req={1}; before={2}; after={3}; result=MISMATCH",
-                    tag, percent, before, after));
+                LogStore.Write("SET", string.Format("{0}req={1}; before={2}; after={3}; result=MISMATCH; elapsed={4}ms",
+                    tag, percent, before, after, watch.ElapsedMilliseconds));
 
             return true;
         }
@@ -4902,31 +4918,67 @@ namespace BrightnessApp
     // ── 节电模式（Battery Saver）常开策略 ──────────────────────────
     // Win10 没有可编程开关的接口，只能用“节能器电池阈值”策略：阈值=100% 时，
     // 用电池会自动开启节电模式；插电时由系统自行管理。
-    static class SaverPolicy
+    // ── 免 UAC 的提权执行器 ─────────────────────────────────
+    // 首次安装一个以 SYSTEM 身份运行的计划任务；之后把「操作请求」写入 request.txt，
+    // 触发任务执行并等待 result.txt，不再弹管理员授权窗口。
+    static class PolicyRunner
     {
-        const string KeyPath =
-            @"SOFTWARE\Policies\Microsoft\Power\PowerSettings\E69653CA-CF7F-4F05-AA73-CB833FA90AD4";
+        public const string TaskName = "BrightnessApp.PolicyRunner";
 
-        // 提权脚本最多等 30 秒：超过基本可以断定 UAC 弹窗没被点掉，不必让用户干等 90 秒
+        // 提权脚本最多等 30 秒：超过基本可以断定 UAC 弹窗没被点掉
         const int ElevateTimeoutMs = 30000;
         const string ElevateTimeoutText = "等待管理员授权超时（请在 UAC 弹窗上点「是」后重试）";
 
-        // 一次性写入 AC/DC 阈值并刷新策略：只弹一次 UAC、只跑一次 gpupdate
-        static bool SetPolicy(bool setAc, int acValue, bool setDc, int dcValue, out string msg)
+        static bool _installFailed;
+
+        // 本次运行内安装失败过就不再反复弹授权
+        public static bool AutoInstallFailed
         {
-            msg = "";
-            string script = Path.Combine(Path.GetTempPath(), "saver-policy.ps1");
+            get { return _installFailed; }
+            set { _installFailed = value; }
+        }
+
+        static string Root
+        {
+            get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "BrightnessApp"); }
+        }
+        static string IoDir { get { return Path.Combine(Root, "io"); } }
+        static string RequestPath { get { return Path.Combine(IoDir, "request.txt"); } }
+        static string ResultPath { get { return Path.Combine(IoDir, "result.txt"); } }
+
+        // 查询计划任务（不需要管理员）
+        public static bool IsInstalled()
+        {
             try
             {
-                var sb = new StringBuilder();
-                sb.AppendLine("$ErrorActionPreference='SilentlyContinue'");
-                sb.AppendLine("$key='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Power\\PowerSettings\\E69653CA-CF7F-4F05-AA73-CB833FA90AD4'");
-                sb.AppendLine("New-Item $key -Force | Out-Null");
-                if (setAc) sb.AppendLine("New-ItemProperty $key -Name ACSettingIndex -Value " + acValue + " -PropertyType DWord -Force | Out-Null");
-                if (setDc) sb.AppendLine("New-ItemProperty $key -Name DCSettingIndex -Value " + dcValue + " -PropertyType DWord -Force | Out-Null");
-                // 只刷新改动的策略，不用 /force 重刷全部组策略（原来单这一步就可能卡几十秒）
-                sb.AppendLine("gpupdate /target:computer | Out-Null");
-                File.WriteAllText(script, sb.ToString(), new UTF8Encoding(false));
+                var psi = new ProcessStartInfo("schtasks.exe", "/Query /TN \"" + TaskName + "\"");
+                psi.UseShellExecute = false;
+                psi.CreateNoWindow = true;
+                psi.RedirectStandardOutput = true;
+                psi.RedirectStandardError = true;
+                using (Process p = Process.Start(psi))
+                {
+                    p.StandardOutput.ReadToEnd();
+                    p.StandardError.ReadToEnd();
+                    if (!p.WaitForExit(5000))
+                    {
+                        try { p.Kill(); } catch { }
+                        return false;
+                    }
+                    return p.ExitCode == 0;
+                }
+            }
+            catch { return false; }
+        }
+
+        // 写入临时脚本并以管理员身份执行（会弹一次 UAC）
+        public static bool RunElevatedScript(string text, string fileName, out string msg)
+        {
+            msg = "";
+            string script = Path.Combine(Path.GetTempPath(), fileName);
+            try
+            {
+                File.WriteAllText(script, text, new UTF8Encoding(false));
 
                 var psi = new ProcessStartInfo("powershell.exe",
                     "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"" + script + "\"");
@@ -4949,6 +5001,294 @@ namespace BrightnessApp
             {
                 msg = "未获得管理员授权：" + ex.Message;
                 try { LogStore.Write("WARN", "saver-policy: " + msg); } catch { }
+                return false;
+            }
+            return true;
+        }
+
+        // 一次性安装后台任务（这一次会弹 UAC）
+        public static bool Install(out string msg)
+        {
+            msg = "";
+            if (IsInstalled()) return true;
+            if (!RunElevatedScript(SetupScript(), "policy-task-setup.ps1", out msg)) return false;
+            if (!IsInstalled())
+            {
+                msg = "后台任务安装后仍未找到（可能被安全软件拦截）";
+                return false;
+            }
+            try { LogStore.Write("CONFIG", "policy-task: installed"); } catch { }
+            return true;
+        }
+
+        // 通过后台任务执行策略写入：写请求 → 触发任务 → 等待结果（不需要管理员）
+        public static bool Execute(string op, out string msg)
+        {
+            msg = "";
+            if (!IsInstalled()) { msg = "后台任务未安装"; return false; }
+
+            long id = DateTime.Now.Ticks;
+            try
+            {
+                if (!Directory.Exists(IoDir)) Directory.CreateDirectory(IoDir);
+                if (File.Exists(ResultPath)) File.Delete(ResultPath);
+                File.WriteAllText(RequestPath, "id=" + id + "\r\n" + op, new UTF8Encoding(false));
+
+                var psi = new ProcessStartInfo("schtasks.exe", "/Run /TN \"" + TaskName + "\"");
+                psi.UseShellExecute = false;
+                psi.CreateNoWindow = true;
+                psi.RedirectStandardOutput = true;
+                psi.RedirectStandardError = true;
+                using (Process p = Process.Start(psi))
+                {
+                    p.StandardOutput.ReadToEnd();
+                    string stderr = p.StandardError.ReadToEnd();
+                    if (!p.WaitForExit(10000))
+                    {
+                        try { p.Kill(); } catch { }
+                        msg = "触发后台任务超时";
+                        return false;
+                    }
+                    if (p.ExitCode != 0)
+                    {
+                        msg = "无法启动后台任务（错误码 " + p.ExitCode + "）"
+                            + (stderr.Trim().Length > 0 ? "：" + stderr.Trim() : "");
+                        return false;
+                    }
+                }
+
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                while (sw.ElapsedMilliseconds < 20000)
+                {
+                    System.Threading.Thread.Sleep(150);
+                    if (!File.Exists(ResultPath)) continue;
+                    string r = "";
+                    try { r = File.ReadAllText(ResultPath).Trim(); } catch { continue; }
+                    if (r == "OK " + id) return true;
+                    if (r.StartsWith("ERR " + id))
+                    {
+                        string code = r.Substring(("ERR " + id).Length).Trim();
+                        msg = code == "no-request" ? "后台任务没读到请求文件"
+                            : code == "bad-request" ? "请求格式被后台任务拒绝"
+                            : "后台任务执行失败";
+                        return false;
+                    }
+                }
+                msg = "后台任务 20 秒内未完成";
+                return false;
+            }
+            catch (Exception ex)
+            {
+                msg = ex.Message;
+                return false;
+            }
+        }
+
+        // 安装脚本：写 runner.ps1 + 建 SYSTEM 计划任务 + 允许普通用户运行
+        static string SetupScript()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("$ErrorActionPreference='Stop'");
+            sb.AppendLine("$dir = Join-Path $env:ProgramData 'BrightnessApp'");
+            sb.AppendLine("$io = Join-Path $dir 'io'");
+            sb.AppendLine("New-Item -ItemType Directory -Force $dir | Out-Null");
+            sb.AppendLine("New-Item -ItemType Directory -Force $io | Out-Null");
+            sb.AppendLine("$runner = @'");
+            sb.Append(RunnerScript());
+            sb.AppendLine("'@");
+            sb.AppendLine("Set-Content -LiteralPath (Join-Path $dir 'runner.ps1') -Value $runner -Encoding UTF8");
+            sb.AppendLine("icacls $dir /inheritance:r /grant '*S-1-5-18:(OI)(CI)F' /grant '*S-1-5-32-544:(OI)(CI)F' /grant '*S-1-5-32-545:(OI)(CI)RX' | Out-Null");
+            sb.AppendLine("icacls $io /grant '*S-1-5-32-545:(OI)(CI)M' | Out-Null");
+            sb.AppendLine("$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"' + (Join-Path $dir 'runner.ps1') + '\"')");
+            sb.AppendLine("$principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest");
+            sb.AppendLine("Register-ScheduledTask -TaskName '" + TaskName + "' -Action $action -Principal $principal -Force | Out-Null");
+            sb.AppendLine("$svc = New-Object -ComObject Schedule.Service");
+            sb.AppendLine("$svc.Connect()");
+            sb.AppendLine("$t = $svc.GetFolder('\\').GetTask('" + TaskName + "')");
+            sb.AppendLine("$sd = $t.GetSecurityDescriptor(0)");
+            sb.AppendLine("if ($sd -notmatch 'GRGX;;;BU') { $t.SetSecurityDescriptor(([regex]::Replace($sd, '^(D:[A-Z]*)', '$1(A;;GRGX;;;BU)')), 0) }");
+            sb.AppendLine("if (-not (Test-Path (Join-Path $dir 'runner.ps1'))) { throw 'runner missing' }");
+            return sb.ToString();
+        }
+
+        // SYSTEM 任务实际执行的脚本：只接受固定格式的请求，不执行任意命令
+        static string RunnerScript()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("$ErrorActionPreference='SilentlyContinue'");
+            sb.AppendLine("$io = Join-Path $PSScriptRoot 'io'");
+            sb.AppendLine("$req = Join-Path $io 'request.txt'");
+            sb.AppendLine("$res = Join-Path $io 'result.txt'");
+            sb.AppendLine("$key = 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Power\\PowerSettings\\E69653CA-CF7F-4F05-AA73-CB833FA90AD4'");
+            sb.AppendLine("$text = ''");
+            sb.AppendLine("try { $text = Get-Content -LiteralPath $req -Raw -ErrorAction Stop } catch { }");
+            sb.AppendLine("if (-not $text) { Set-Content -LiteralPath $res -Value 'ERR 0 no-request'; exit 1 }");
+            sb.AppendLine("$id = ''; $op = ''; $ac = ''; $dc = ''; $bad = $false");
+            sb.AppendLine("foreach ($line in ($text -split \"`r?`n\")) {");
+            sb.AppendLine("  $s = $line.Trim()");
+            sb.AppendLine("  if (-not $s) { continue }");
+            sb.AppendLine("  if ($s -match '^id=([0-9]+)$') { $id = $Matches[1]; continue }");
+            sb.AppendLine("  if ($s -match '^op=(set|remove)$') { $op = $Matches[1]; continue }");
+            sb.AppendLine("  if ($s -match '^ac=(none|[0-9]{1,3})$') { $ac = $Matches[1]; continue }");
+            sb.AppendLine("  if ($s -match '^dc=(none|[0-9]{1,3})$') { $dc = $Matches[1]; continue }");
+            sb.AppendLine("  $bad = $true");
+            sb.AppendLine("}");
+            sb.AppendLine("if ($bad -or $id -eq '' -or $op -eq '') { Set-Content -LiteralPath $res -Value ('ERR ' + $id + ' bad-request'); exit 1 }");
+            sb.AppendLine("if ($op -eq 'remove') {");
+            sb.AppendLine("  Remove-Item -LiteralPath $key -Recurse -Force -ErrorAction SilentlyContinue");
+            sb.AppendLine("} else {");
+            sb.AppendLine("  if (-not (Test-Path $key)) { New-Item -Path $key -Force | Out-Null }");
+            sb.AppendLine("  if ($ac -ne '') {");
+            sb.AppendLine("    if ($ac -eq 'none') { Remove-ItemProperty -Path $key -Name ACSettingIndex -ErrorAction SilentlyContinue }");
+            sb.AppendLine("    else { New-ItemProperty -Path $key -Name ACSettingIndex -Value ([int]$ac) -PropertyType DWord -Force | Out-Null }");
+            sb.AppendLine("  }");
+            sb.AppendLine("  if ($dc -ne '') {");
+            sb.AppendLine("    if ($dc -eq 'none') { Remove-ItemProperty -Path $key -Name DCSettingIndex -ErrorAction SilentlyContinue }");
+            sb.AppendLine("    else { New-ItemProperty -Path $key -Name DCSettingIndex -Value ([int]$dc) -PropertyType DWord -Force | Out-Null }");
+            sb.AppendLine("  }");
+            sb.AppendLine("}");
+            sb.AppendLine("Start-Process gpupdate -ArgumentList '/target:computer' -WindowStyle Hidden");
+            sb.AppendLine("Set-Content -LiteralPath $res -Value ('OK ' + $id)");
+            return sb.ToString();
+        }
+    }
+
+    static class SaverPolicy
+    {
+        const string KeyPath =
+            @"SOFTWARE\Policies\Microsoft\Power\PowerSettings\E69653CA-CF7F-4F05-AA73-CB833FA90AD4";
+
+        // 生成策略操作请求（ac/dc 为 none 表示删除该项，缺省表示不改）
+        static string OpSet(string ac, string dc)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("op=set");
+            if (ac != null) sb.AppendLine("ac=" + ac);
+            if (dc != null) sb.AppendLine("dc=" + dc);
+            return sb.ToString();
+        }
+
+        // 依据备份生成「还原」请求
+        static string RestoreOp()
+        {
+            bool existed;
+            string ac, dc;
+            ReadBackup(out existed, out ac, out dc);
+            if (!existed) return "op=remove\r\n";
+            return OpSet(string.IsNullOrEmpty(ac) ? "none" : ac,
+                         string.IsNullOrEmpty(dc) ? "none" : dc);
+        }
+
+        // 请求 → 备用提权脚本（后台任务不可用时使用）
+        static string ScriptFromOp(string op)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("$ErrorActionPreference='Stop'");
+            sb.AppendLine("$key='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Power\\PowerSettings\\E69653CA-CF7F-4F05-AA73-CB833FA90AD4'");
+            bool remove = false;
+            string ac = null, dc = null;
+            foreach (string raw in op.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                string line = raw.Trim();
+                if (line == "op=remove") remove = true;
+                else if (line.StartsWith("ac=")) ac = line.Substring(3);
+                else if (line.StartsWith("dc=")) dc = line.Substring(3);
+            }
+            if (remove)
+            {
+                sb.AppendLine("Remove-Item -LiteralPath $key -Recurse -Force -ErrorAction SilentlyContinue");
+            }
+            else
+            {
+                sb.AppendLine("if (-not (Test-Path $key)) { New-Item -Path $key -Force | Out-Null }");
+                AppendValue(sb, "ACSettingIndex", ac);
+                AppendValue(sb, "DCSettingIndex", dc);
+            }
+            sb.AppendLine("Start-Process gpupdate -ArgumentList '/target:computer' -WindowStyle Hidden");
+            return sb.ToString();
+        }
+
+        static void AppendValue(StringBuilder sb, string name, string val)
+        {
+            if (val == null) return;
+            if (val == "none")
+                sb.AppendLine("Remove-ItemProperty -Path $key -Name " + name + " -ErrorAction SilentlyContinue");
+            else
+                sb.AppendLine("New-ItemProperty -Path $key -Name " + name + " -Value " + val + " -PropertyType DWord -Force | Out-Null");
+        }
+
+        // 优先走免 UAC 的后台任务；不可用时回退到直接提权
+        static bool RunPolicy(string op, out string msg)
+        {
+            msg = "";
+            bool installed = PolicyRunner.IsInstalled();
+            if (!installed && !PolicyRunner.AutoInstallFailed)
+            {
+                string imsg;
+                installed = PolicyRunner.Install(out imsg);
+                if (!installed)
+                {
+                    PolicyRunner.AutoInstallFailed = true;
+                    try { LogStore.Write("WARN", "policy-task install: " + imsg); } catch { }
+                }
+            }
+            if (installed)
+            {
+                if (PolicyRunner.Execute(op, out msg)) return true;
+                try { LogStore.Write("WARN", "policy-task: " + msg + "；改用直接提权"); } catch { }
+            }
+            return PolicyRunner.RunElevatedScript(ScriptFromOp(op), "saver-policy.ps1", out msg);
+        }
+
+        static bool ReadBackup(out bool existed, out string ac, out string dc)
+        {
+            existed = false;
+            ac = "";
+            dc = "";
+            try
+            {
+                if (!File.Exists(BackupPath)) return false;
+                foreach (string line in File.ReadAllLines(BackupPath))
+                {
+                    int p = line.IndexOf('=');
+                    if (p < 0) continue;
+                    string key = line.Substring(0, p), val = line.Substring(p + 1).Trim();
+                    if (key == "existed") existed = val == "1";
+                    else if (key == "dc") dc = val;
+                    else if (key == "ac") ac = val;
+                }
+            }
+            catch { }
+            return true;
+        }
+
+        static bool DcMatches(string dc)
+        {
+            try
+            {
+                using (RegistryKey k = Registry.LocalMachine.OpenSubKey(KeyPath))
+                {
+                    object v = k == null ? null : k.GetValue("DCSettingIndex");
+                    if (string.IsNullOrEmpty(dc)) return v == null;
+                    return v != null && Convert.ToInt32(v).ToString() == dc;
+                }
+            }
+            catch { return false; }
+        }
+
+        // 释放全部性能时写策略：插电阈值 0，电池阈值还原成备份值（一次完成两件事）
+        public static bool ApplyPerfPolicy(out string msg)
+        {
+            msg = "";
+            bool existed;
+            string ac, dc;
+            ReadBackup(out existed, out ac, out dc);
+            if (AcThresholdOk() && DcMatches(dc)) return true;
+
+            if (!RunPolicy(OpSet("0", string.IsNullOrEmpty(dc) ? "none" : dc), out msg)) return false;
+            if (!AcThresholdOk() || !DcMatches(dc))
+            {
+                msg = "策略已写入，但系统尚未生效（可稍后重试）";
                 return false;
             }
             return true;
@@ -4999,7 +5339,7 @@ namespace BrightnessApp
         {
             msg = "";
             if (ForcedBoth) return true;
-            if (!SetPolicy(true, 100, true, 100, out msg)) return false;
+            if (!RunPolicy(OpSet("100", "100"), out msg)) return false;
             if (!ForcedBoth)
             {
                 msg = "策略已写入，但系统尚未生效（可稍后重试）";
@@ -5011,51 +5351,13 @@ namespace BrightnessApp
         // 按备份文件还原节电策略（不判断 IsOn，因为备份本身可能就带 DC=100）
         public static bool RestoreBackup(out string msg)
         {
-            msg = "";
-            string script = Path.Combine(Path.GetTempPath(), "saver-restore.ps1");
-            try
-            {
-                File.WriteAllText(script, BuildScript(false), new UTF8Encoding(false));
-
-                var psi = new ProcessStartInfo("powershell.exe",
-                    "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"" + script + "\"");
-                psi.UseShellExecute = true;
-                psi.Verb = "runas";
-                psi.WindowStyle = ProcessWindowStyle.Hidden;
-
-                using (Process p = Process.Start(psi))
-                {
-                    if (!p.WaitForExit(ElevateTimeoutMs))
-                    {
-                        try { p.Kill(); } catch { }
-                        msg = ElevateTimeoutText;
-                        try { LogStore.Write("WARN", "saver-policy: " + msg); } catch { }
-                        return false;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                msg = "未获得管理员授权：" + ex.Message;
-                try { LogStore.Write("WARN", "saver-policy: " + msg); } catch { }
-                return false;
-            }
-            return true;
+            return RunPolicy(RestoreOp(), out msg);
         }
 
-        // 确保插电时不被节电模式限制：把策略里的“插电阈值”改为 0（电池阈值保留）
-        // 阈值=100 会让系统在插电时也强制节电，CPU 被钉在基频、完全失去睿频
+        // 确保插电时不被节电模式限制：插电阈值 0，电池阈值还原（单次提权）
         public static bool AllowPluggedIn(out string msg)
         {
-            msg = "";
-            if (AcThresholdOk()) return true;
-            if (!SetPolicy(true, 0, false, 0, out msg)) return false;
-            if (!AcThresholdOk())
-            {
-                msg = "策略已写入，但系统尚未生效（可稍后重试）";
-                return false;
-            }
-            return true;
+            return ApplyPerfPolicy(out msg);
         }
 
         static bool AcThresholdOk()
@@ -5117,33 +5419,8 @@ namespace BrightnessApp
         public static bool Apply(bool on, out string msg)
         {
             msg = "";
-            string script = Path.Combine(Path.GetTempPath(), "saver-lock.ps1");
-            try
-            {
-                File.WriteAllText(script, BuildScript(on), new UTF8Encoding(false));
-
-                var psi = new ProcessStartInfo("powershell.exe",
-                    "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"" + script + "\"");
-                psi.UseShellExecute = true;
-                psi.Verb = "runas";
-                psi.WindowStyle = ProcessWindowStyle.Hidden;
-
-                using (Process p = Process.Start(psi))
-                {
-                    if (!p.WaitForExit(ElevateTimeoutMs))
-                    {
-                        try { p.Kill(); } catch { }
-                        msg = ElevateTimeoutText;
-                        try { LogStore.Write("WARN", "saver-policy: " + msg); } catch { }
-                        return false;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                msg = "未获得管理员授权：" + ex.Message;
-                return false;
-            }
+            string op = on ? OpSet("0", "100") : RestoreOp();
+            if (!RunPolicy(op, out msg)) return false;
 
             bool now = IsOn();
             if (now != on)
@@ -5153,59 +5430,6 @@ namespace BrightnessApp
             }
             msg = on ? "已启用：用电池时自动保持节电模式" : "已还原为原始策略";
             return true;
-        }
-
-        static string BuildScript(bool on)
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine("$ErrorActionPreference='Stop'");
-            sb.AppendLine("$key='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Power\\PowerSettings\\E69653CA-CF7F-4F05-AA73-CB833FA90AD4'");
-
-            if (on)
-            {
-                sb.AppendLine("New-Item $key -Force | Out-Null");
-                sb.AppendLine("New-ItemProperty $key -Name DCSettingIndex -Value 100 -PropertyType DWord -Force | Out-Null");
-                // 插电阈值必须保持 0：写成 100 会在插电时也强制节电模式，CPU 被锁在基频无法睿频
-                sb.AppendLine("New-ItemProperty $key -Name ACSettingIndex -Value 0 -PropertyType DWord -Force | Out-Null");
-            }
-            else
-            {
-                bool existed = false;
-                string dc = "", ac = "";
-                try
-                {
-                    foreach (string line in File.ReadAllLines(BackupPath))
-                    {
-                        int p = line.IndexOf('=');
-                        if (p < 0) continue;
-                        string key = line.Substring(0, p), val = line.Substring(p + 1).Trim();
-                        if (key == "existed") existed = val == "1";
-                        else if (key == "dc") dc = val;
-                        else if (key == "ac") ac = val;
-                    }
-                }
-                catch { }
-
-                if (!existed)
-                {
-                    sb.AppendLine("Remove-Item $key -Recurse -Force -ErrorAction SilentlyContinue");
-                }
-                else
-                {
-                    sb.AppendLine("New-Item $key -Force | Out-Null");
-                    if (dc.Length > 0)
-                        sb.AppendLine("New-ItemProperty $key -Name DCSettingIndex -Value " + dc + " -PropertyType DWord -Force | Out-Null");
-                    else
-                        sb.AppendLine("Remove-ItemProperty $key -Name DCSettingIndex -ErrorAction SilentlyContinue");
-                    if (ac.Length > 0)
-                        sb.AppendLine("New-ItemProperty $key -Name ACSettingIndex -Value " + ac + " -PropertyType DWord -Force | Out-Null");
-                    else
-                        sb.AppendLine("Remove-ItemProperty $key -Name ACSettingIndex -ErrorAction SilentlyContinue");
-                }
-            }
-
-            sb.AppendLine("gpupdate /target:computer | Out-Null");
-            return sb.ToString();
         }
     }
 }
