@@ -15,7 +15,7 @@ namespace BrightnessApp
 {
     static class Program
     {
-        public const string Version = "1.5.1";
+        public const string Version = "1.5.3";
         public const string AppName = "屏亮管家";
 
         [STAThread]
@@ -189,6 +189,7 @@ namespace BrightnessApp
             using (var searcher = new ManagementObjectSearcher(
                 "root\\WMI", "SELECT CurrentBrightness, Active FROM WmiMonitorBrightness"))
             {
+                searcher.Options.Timeout = TimeSpan.FromSeconds(10);
                 int? fallback = null;
                 foreach (ManagementBaseObject o in searcher.Get())
                 {
@@ -218,6 +219,7 @@ namespace BrightnessApp
             using (var searcher = new ManagementObjectSearcher(
                 "root\\WMI", "SELECT * FROM WmiMonitorBrightnessMethods"))
             {
+                searcher.Options.Timeout = TimeSpan.FromSeconds(10);
                 foreach (ManagementObject o in searcher.Get())
                 {
                     o.InvokeMethod("WmiSetBrightness", new object[] { (uint)1, (byte)percent });
@@ -234,6 +236,7 @@ namespace BrightnessApp
                 using (var searcher = new ManagementObjectSearcher(
                     "root\\WMI", "SELECT Levels FROM WmiMonitorBrightness"))
                 {
+                    searcher.Options.Timeout = TimeSpan.FromSeconds(10);
                     foreach (ManagementBaseObject o in searcher.Get())
                     {
                         object lv = null;
@@ -945,7 +948,7 @@ namespace BrightnessApp
                     // powercfg 在部分系统上直接输出 UTF-8，先按严格 UTF-8 解码，失败再回退 GBK
                     string o = ReadText(p.StandardOutput.BaseStream);
                     string e = ReadText(p.StandardError.BaseStream);
-                    if (!p.WaitForExit(20000))
+                    if (!p.WaitForExit(10000))
                     {
                         try { p.Kill(); } catch { }
                         return o + " " + e;
@@ -1799,7 +1802,8 @@ namespace BrightnessApp
             FormBorderStyle = FormBorderStyle.None;
             StartPosition = FormStartPosition.CenterParent;
             ShowInTaskbar = false;
-            TopMost = true;
+            // 不用 TopMost：提权时 UAC 窗口可能出现在普通桌面层，置顶会把它挡住
+            TopMost = false;
             BackColor = Color.White;
             ClientSize = new Size(404, 196);
             Font = new Font("Microsoft YaHei UI", 9F);
@@ -1848,6 +1852,9 @@ namespace BrightnessApp
                 _lblClock.Text = "已等待 " + _elapsed + " 秒 · 预计还需 " + (10 - _elapsed) + " 秒";
             else
                 _lblClock.Text = "已等待 " + _elapsed + " 秒 · 正在收尾，请再稍等…";
+
+            if (_elapsed == 25)
+                _lblHint.Text = "超出预计时间：如果一直停在这一步，多半是管理员授权（UAC）窗口被挡住，请到任务栏点它并选「是」。";
         }
 
         public void StepForward(string text)
@@ -1895,17 +1902,24 @@ namespace BrightnessApp
                 return "即将「释放全部性能」。\r\n\r\n"
                      + "整个过程大约需要 10 秒：程序要逐项修改电源模式、处理器上限、散热策略和节电设置，"
                      + "期间鼠标和界面可能短暂卡顿，这是正常现象，请不要重复点击。\r\n\r\n"
+                     + "如果系统弹出管理员授权（UAC）窗口，请点「是」，否则会一直等待直到超时。\r\n\r\n"
                      + "完成后会弹窗告诉你结果。\r\n\r\n是否现在开始？";
             return "即将开启「超级节能」。\r\n\r\n"
                  + "整个过程大约需要 10 秒：程序要逐项修改电源计划、处理器上限、散热策略、睿频和节电设置，"
                  + "期间鼠标和界面可能短暂卡顿，这是正常现象，请不要重复点击。\r\n\r\n"
+                 + "如果系统弹出管理员授权（UAC）窗口，请点「是」，否则会一直等待直到超时。\r\n\r\n"
                  + "完成后会弹窗告诉你结果。\r\n\r\n是否现在开始？";
         }
 
         // 显示进度窗 → 后台线程执行 work → 关闭进度窗 → 回到界面线程执行 finish
+        // 每次操作都写「开始 / 每步 / 结束 / 失败原因」日志：即使中途卡住或进程被杀，也能从日志看出停在哪
         public static void Run(IWin32Window owner, string title, int totalSteps, ModeWork work, ModeFinish finish)
         {
             var errs = new List<string>();
+            var total = System.Diagnostics.Stopwatch.StartNew();
+            try { LogStore.Write("CONFIG", "mode-start: " + title + " steps=" + totalSteps + " admin=" + PowerCtl.IsAdmin()); }
+            catch { }
+
             using (var dlg = new ModeProgressForm(title, totalSteps))
             {
                 var ready = new System.Threading.ManualResetEvent(false);
@@ -1913,11 +1927,17 @@ namespace BrightnessApp
 
                 var th = new System.Threading.Thread(delegate()
                 {
+                    var sw = System.Diagnostics.Stopwatch.StartNew();
+                    long last = 0;
                     try
                     {
                         ready.WaitOne();
                         work(errs, delegate(string text)
                         {
+                            long now = sw.ElapsedMilliseconds;
+                            try { LogStore.Write("CONFIG", "mode-step " + (now - last) + "ms → " + text); }
+                            catch { }
+                            last = now;
                             try { dlg.BeginInvoke(new Action(delegate { dlg.StepForward(text); })); }
                             catch { }
                         });
@@ -1928,6 +1948,8 @@ namespace BrightnessApp
                     }
                     finally
                     {
+                        try { LogStore.Write("CONFIG", "mode-work done in " + sw.ElapsedMilliseconds + "ms, errors=" + errs.Count); }
+                        catch { }
                         try { dlg.BeginInvoke(new Action(delegate { dlg.FinishNow(); })); }
                         catch { }
                     }
@@ -1938,6 +1960,15 @@ namespace BrightnessApp
                 dlg.ShowDialog(owner);
                 th.Join(3000);
             }
+
+            total.Stop();
+            try
+            {
+                LogStore.Write("CONFIG", "mode-end: " + title + " " + total.ElapsedMilliseconds + "ms errors=" + errs.Count);
+                for (int i = 0; i < errs.Count; i++)
+                    LogStore.Write("WARN", "mode-err: " + errs[i]);
+            }
+            catch { }
 
             finish(errs);
         }
@@ -2747,6 +2778,7 @@ namespace BrightnessApp
                 _modeSyncing = true;
                 try { self.SetCheckedSilent(false); }
                 finally { _modeSyncing = false; }
+                try { LogStore.Write("CONFIG", "mode-cancel: 用户取消「" + name + "」"); } catch { }
                 return;
             }
 
@@ -2790,6 +2822,7 @@ namespace BrightnessApp
                 finally { _modeSyncing = false; }
                 MessageBox.Show(this, "没找到打开前的备份，未做还原。", "还原",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                try { LogStore.Write("CONFIG", "mode-off: 未还原（没找到打开前的备份）"); } catch { }
                 return;
             }
 
@@ -2869,7 +2902,7 @@ namespace BrightnessApp
             if (!PowerCtl.SetBoostMode(true, 2, out err)) errs.Add("睿频策略：" + err);
 
             // 关键：插电若被“节电模式”强制开启，CPU 会被锁在基频、完全没有睿频
-            step("关闭插电时的节电限制");
+            step("关闭插电时的节电限制（如有管理员授权窗，请点「是」）");
             SaverPolicy.SaveBackupForce();
             string saverMsg;
             if (!SaverPolicy.AllowPluggedIn(out saverMsg)) errs.Add("插电节电限制：" + saverMsg);
@@ -2883,6 +2916,7 @@ namespace BrightnessApp
         {
             PowerState now = PowerCtl.Read();
             try { PowerCtl.SaveSnapshot(now); } catch { }
+            LogStore.Write("CONFIG", "mode=saver: maxcpu=30 cooling=passive boost=off saver=always");
 
             string err;
 
@@ -2918,14 +2952,13 @@ namespace BrightnessApp
             if (!PowerCtl.SetBoostMode(false, 0, out err) && admin) errs.Add("电池·睿频：" + err);
 
             // 插电、电池都强制开启节电模式
-            step("插电和电池都开启节电模式");
+            step("插电和电池都开启节电模式（如有管理员授权窗，请点「是」）");
             SaverPolicy.SaveBackupForce();
             string saverMsg;
             if (!SaverPolicy.ForceAlwaysOn(out saverMsg)) errs.Add("节电模式：" + saverMsg);
 
             step("让系统立即生效");
             PowerCtl.Activate(out err);
-            LogStore.Write("CONFIG", "mode=saver: maxcpu=30 cooling=passive boost=off saver=always");
         }
 
         // 还原到打开前的备份（不碰界面，可在后台线程执行）
@@ -2962,7 +2995,7 @@ namespace BrightnessApp
             if (!PowerCtl.SetOverlay(online ? snap.AcOverlay : snap.DcOverlay, out err)) errs.Add("电源模式：" + err);
 
             // 节电策略按打开前的备份还原
-            step("还原节电模式");
+            step("还原节电模式（如有管理员授权窗，请点「是」）");
             string saverMsg;
             if (!SaverPolicy.RestoreBackup(out saverMsg)) errs.Add("节电模式：" + saverMsg);
 
@@ -4874,6 +4907,53 @@ namespace BrightnessApp
         const string KeyPath =
             @"SOFTWARE\Policies\Microsoft\Power\PowerSettings\E69653CA-CF7F-4F05-AA73-CB833FA90AD4";
 
+        // 提权脚本最多等 30 秒：超过基本可以断定 UAC 弹窗没被点掉，不必让用户干等 90 秒
+        const int ElevateTimeoutMs = 30000;
+        const string ElevateTimeoutText = "等待管理员授权超时（请在 UAC 弹窗上点「是」后重试）";
+
+        // 一次性写入 AC/DC 阈值并刷新策略：只弹一次 UAC、只跑一次 gpupdate
+        static bool SetPolicy(bool setAc, int acValue, bool setDc, int dcValue, out string msg)
+        {
+            msg = "";
+            string script = Path.Combine(Path.GetTempPath(), "saver-policy.ps1");
+            try
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine("$ErrorActionPreference='SilentlyContinue'");
+                sb.AppendLine("$key='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Power\\PowerSettings\\E69653CA-CF7F-4F05-AA73-CB833FA90AD4'");
+                sb.AppendLine("New-Item $key -Force | Out-Null");
+                if (setAc) sb.AppendLine("New-ItemProperty $key -Name ACSettingIndex -Value " + acValue + " -PropertyType DWord -Force | Out-Null");
+                if (setDc) sb.AppendLine("New-ItemProperty $key -Name DCSettingIndex -Value " + dcValue + " -PropertyType DWord -Force | Out-Null");
+                // 只刷新改动的策略，不用 /force 重刷全部组策略（原来单这一步就可能卡几十秒）
+                sb.AppendLine("gpupdate /target:computer | Out-Null");
+                File.WriteAllText(script, sb.ToString(), new UTF8Encoding(false));
+
+                var psi = new ProcessStartInfo("powershell.exe",
+                    "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"" + script + "\"");
+                psi.UseShellExecute = true;
+                psi.Verb = "runas";
+                psi.WindowStyle = ProcessWindowStyle.Hidden;
+
+                using (Process p = Process.Start(psi))
+                {
+                    if (!p.WaitForExit(ElevateTimeoutMs))
+                    {
+                        try { p.Kill(); } catch { }
+                        msg = ElevateTimeoutText;
+                        try { LogStore.Write("WARN", "saver-policy: " + msg); } catch { }
+                        return false;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                msg = "未获得管理员授权：" + ex.Message;
+                try { LogStore.Write("WARN", "saver-policy: " + msg); } catch { }
+                return false;
+            }
+            return true;
+        }
+
         public static string BackupPath
         {
             get { return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "battery-saver-backup.txt"); }
@@ -4918,40 +4998,8 @@ namespace BrightnessApp
         public static bool ForceAlwaysOn(out string msg)
         {
             msg = "";
-            string script = Path.Combine(Path.GetTempPath(), "saver-force-on.ps1");
-            try
-            {
-                var sb = new StringBuilder();
-                sb.AppendLine("$ErrorActionPreference='SilentlyContinue'");
-                sb.AppendLine("$key='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Power\\PowerSettings\\E69653CA-CF7F-4F05-AA73-CB833FA90AD4'");
-                sb.AppendLine("New-Item $key -Force | Out-Null");
-                sb.AppendLine("New-ItemProperty $key -Name ACSettingIndex -Value 100 -PropertyType DWord -Force | Out-Null");
-                sb.AppendLine("New-ItemProperty $key -Name DCSettingIndex -Value 100 -PropertyType DWord -Force | Out-Null");
-                sb.AppendLine("gpupdate /force /target:computer | Out-Null");
-                File.WriteAllText(script, sb.ToString(), new UTF8Encoding(false));
-
-                var psi = new ProcessStartInfo("powershell.exe",
-                    "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"" + script + "\"");
-                psi.UseShellExecute = true;
-                psi.Verb = "runas";
-                psi.WindowStyle = ProcessWindowStyle.Hidden;
-
-                using (Process p = Process.Start(psi))
-                {
-                    if (!p.WaitForExit(90000))
-                    {
-                        try { p.Kill(); } catch { }
-                        msg = "提权任务超时，请手动再试一次";
-                        return false;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                msg = "未获得管理员授权：" + ex.Message;
-                return false;
-            }
-
+            if (ForcedBoth) return true;
+            if (!SetPolicy(true, 100, true, 100, out msg)) return false;
             if (!ForcedBoth)
             {
                 msg = "策略已写入，但系统尚未生效（可稍后重试）";
@@ -4977,10 +5025,11 @@ namespace BrightnessApp
 
                 using (Process p = Process.Start(psi))
                 {
-                    if (!p.WaitForExit(90000))
+                    if (!p.WaitForExit(ElevateTimeoutMs))
                     {
                         try { p.Kill(); } catch { }
-                        msg = "提权任务超时";
+                        msg = ElevateTimeoutText;
+                        try { LogStore.Write("WARN", "saver-policy: " + msg); } catch { }
                         return false;
                     }
                 }
@@ -4988,6 +5037,7 @@ namespace BrightnessApp
             catch (Exception ex)
             {
                 msg = "未获得管理员授权：" + ex.Message;
+                try { LogStore.Write("WARN", "saver-policy: " + msg); } catch { }
                 return false;
             }
             return true;
@@ -4999,39 +5049,7 @@ namespace BrightnessApp
         {
             msg = "";
             if (AcThresholdOk()) return true;
-
-            string script = Path.Combine(Path.GetTempPath(), "saver-ac-off.ps1");
-            try
-            {
-                var sb = new StringBuilder();
-                sb.AppendLine("$ErrorActionPreference='SilentlyContinue'");
-                sb.AppendLine("$key='HKLM:\\SOFTWARE\\Policies\\Microsoft\\Power\\PowerSettings\\E69653CA-CF7F-4F05-AA73-CB833FA90AD4'");
-                sb.AppendLine("if (Test-Path $key) { New-ItemProperty $key -Name ACSettingIndex -Value 0 -PropertyType DWord -Force | Out-Null }");
-                sb.AppendLine("gpupdate /force /target:computer | Out-Null");
-                File.WriteAllText(script, sb.ToString(), new UTF8Encoding(false));
-
-                var psi = new ProcessStartInfo("powershell.exe",
-                    "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"" + script + "\"");
-                psi.UseShellExecute = true;
-                psi.Verb = "runas";
-                psi.WindowStyle = ProcessWindowStyle.Hidden;
-
-                using (Process p = Process.Start(psi))
-                {
-                    if (!p.WaitForExit(90000))
-                    {
-                        try { p.Kill(); } catch { }
-                        msg = "提权任务超时，请手动再试一次";
-                        return false;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                msg = "未获得管理员授权：" + ex.Message;
-                return false;
-            }
-
+            if (!SetPolicy(true, 0, false, 0, out msg)) return false;
             if (!AcThresholdOk())
             {
                 msg = "策略已写入，但系统尚未生效（可稍后重试）";
@@ -5112,10 +5130,11 @@ namespace BrightnessApp
 
                 using (Process p = Process.Start(psi))
                 {
-                    if (!p.WaitForExit(90000))
+                    if (!p.WaitForExit(ElevateTimeoutMs))
                     {
                         try { p.Kill(); } catch { }
-                        msg = "提权任务超时，请手动再试一次";
+                        msg = ElevateTimeoutText;
+                        try { LogStore.Write("WARN", "saver-policy: " + msg); } catch { }
                         return false;
                     }
                 }
@@ -5185,7 +5204,7 @@ namespace BrightnessApp
                 }
             }
 
-            sb.AppendLine("gpupdate /force /target:computer | Out-Null");
+            sb.AppendLine("gpupdate /target:computer | Out-Null");
             return sb.ToString();
         }
     }
